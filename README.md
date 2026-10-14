@@ -17,19 +17,37 @@ authentification et stockage). Publié gratuitement via **GitHub Pages**.
 
 ## Mise en ligne (GitHub Pages)
 
-1. Créez un dépôt sur GitHub (public ou privé — GitHub Pages fonctionne dans les deux cas).
-2. Depuis ce dossier :
-   ```bash
-   git init
-   git add .
-   git commit -m "Portail AEDT"
-   git branch -M main
-   git remote add origin https://github.com/VOTRE-COMPTE/VOTRE-DEPOT.git
-   git push -u origin main
-   ```
-3. Dans le dépôt : **Settings > Pages > Source** → choisissez **GitHub Actions**.
-4. Le workflow `.github/workflows/deploy.yml` publie automatiquement le site à chaque
-   push sur `main`. Le site sera disponible sur `https://VOTRE-COMPTE.github.io/VOTRE-DEPOT/`.
+Le site est publié sur **https://ciss223.github.io/AEDT-portail/**
+
+Le dépôt est **https://github.com/ciss223/AEDT-portail** et le déploiement est
+automatisé par le workflow `.github/workflows/deploy.yml` : chaque `git push` sur la
+branche `main` met le site en ligne (environ 1 minute).
+
+### Publier une modification
+
+```powershell
+git add .
+git commit -m "Description de la modification"
+git push
+```
+
+> ℹ️ Le déploiement se déclenche tout seul. Son avancement est visible dans l'onglet
+> **Actions** du dépôt : pastille orange = en cours, verte = en ligne.
+
+### Recréer le projet depuis zéro (référence)
+
+```bash
+git init -b main
+git add .
+git commit -m "Portail AEDT"
+git remote add origin https://github.com/ciss223/AEDT-portail.git
+git push -u origin main
+```
+
+> **Configuration initiale obligatoire (une seule fois)** : dans le dépôt,
+> **Settings > Pages > Build and deployment > Source** doit être réglé sur
+> **« GitHub Actions »**. Sans ce réglage, le site ne se déploie pas.
+
 
 ## Base de données Supabase
 
