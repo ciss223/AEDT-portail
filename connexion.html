@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connexion étudiant — AEDT</title>
+<style>
+:root{--navy:#06254a;--blue:#0b55a1;--gold:#ffbd2e;--line:#e2eaf3;--muted:#64748b}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#eef4fb,#f9fbff);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172a43}
+.box{width:min(470px,100%);background:white;border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:0 18px 55px #08264c12}.brand{color:var(--navy);font-weight:900;text-decoration:none}.tag{color:#b27a00;font-size:.8rem;font-weight:900;letter-spacing:.12em;margin-top:24px}.box h1{margin:8px 0;font-size:2rem}.intro{color:var(--muted);line-height:1.55}.auth-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 22px}.auth-shortcuts a{padding:7px 11px;border-radius:999px;background:#edf4fc;color:var(--navy);font-size:.82rem;font-weight:750;text-decoration:none}.auth-shortcuts a:hover{background:#dcecff}label{display:block;font-weight:750;margin:16px 0 7px}input{width:100%;padding:13px;border:1px solid #ccd8e5;border-radius:10px;font:inherit}button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:20px;background:var(--blue);color:white;font:inherit;font-weight:850;cursor:pointer}.secondary{background:#edf4fc;color:var(--navy)}.status{margin-top:14px;padding:12px;border-radius:10px;display:none;line-height:1.45}.status.error{display:block;background:#fff0f0;color:#a12828}.status.ok{display:block;background:#eaf8ef;color:#17683a}.foot{margin-top:20px;text-align:center;color:var(--muted);font-size:.92rem}.foot a{color:var(--blue);font-weight:800}.back{display:inline-block;margin-top:20px;color:var(--blue);text-decoration:none;font-weight:750}
+</style>
+</head>
+<body><main class="box">
+<a class="brand" href="index.html">AEDT · Portail étudiant</a>
+<div class="tag">ESPACE PERSONNEL</div><h1>Connexion</h1>
+<p class="intro">Connectez-vous pour consulter vos demandes de logement, vos notifications et vos messages de l’Amicale.</p>
+<nav class="auth-shortcuts" aria-label="Explorer le portail"><a href="services.html">Services</a><a href="logement.html">Logement</a><a href="admin.html">Administration</a></nav>
+<form id="login-form">
+<label for="email">Adresse e-mail</label><input id="email" type="email" autocomplete="email" required placeholder="vous@exemple.com">
+<label for="password">Mot de passe</label><input id="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Votre mot de passe">
+<button type="submit">Se connecter</button>
+</form><div id="status" class="status" role="status"></div>
+<button id="resend-btn" class="secondary" type="button" style="display:none">Renvoyer l’e-mail de confirmation</button>
+<div class="foot">Pas encore de compte ? <a href="inscription.html">Créer un compte</a></div>
+<a class="back" href="index.html">← Retour à l’accueil</a>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  const form=document.getElementById('login-form'), statusBox=document.getElementById('status'), resendBtn=document.getElementById('resend-btn');
+  function show(text,kind){statusBox.textContent=text;statusBox.className='status '+kind}
+  function getClient(){
+    if(window.AEDT&&window.AEDT.getSupabaseClient){return window.AEDT.getSupabaseClient();}
+    if(window.aedtSupabase)return window.aedtSupabase;
+    if(window.supabaseClient)return window.supabaseClient;
+    const url=window.AEDT_CONFIG&&window.AEDT_CONFIG.SUPABASE_URL;
+    const key=window.AEDT_CONFIG&&window.AEDT_CONFIG.SUPABASE_ANON_KEY;
+    if(url&&key&&window.supabase)return window.supabase.createClient(url,key);
+    return null;
+  }
+  function isEmailNotConfirmed(err){
+    if(!err)return false;
+    const code=(err.code||'').toLowerCase();
+    const msg=(err.message||'').toLowerCase();
+    return code==='email_not_confirmed' || msg.indexOf('email not confirmed')>-1 || msg.indexOf('not confirmed')>-1;
+  }
+  (async function redirectIfConnected(){
+    const client=getClient();
+    if(!client)return;
+    try{
+      const {data:{user}}=await client.auth.getUser();
+      if(user)location.href='etudiant.html';
+    }catch(err){/* session absente : on reste sur le formulaire */}
+  })();
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const client=getClient();
+    if(!client){show('Configuration Supabase introuvable. Vérifiez config.js et le guide SETUP.md.','error');return}
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('password').value;
+    const btn=form.querySelector('button[type="submit"]');
+    if(btn){btn.disabled=true;btn.textContent='Connexion…'}
+    try{
+      const res=await client.auth.signInWithPassword({email:email,password:password});
+      const error=res.error;
+      if(error){
+        if(isEmailNotConfirmed(error)){
+          show('Votre adresse e-mail n’a pas encore été confirmée. Ouvrez le lien reçu par e-mail pour activer votre compte, ou renvoyez un e-mail de confirmation.','error');
+          resendBtn.style.display='block';
+          resendBtn.onclick=async()=>{
+            resendBtn.disabled=true;resendBtn.textContent='Envoi en cours…';
+            const r=await client.auth.resend({type:'signup',email:email});
+            if(r.error){show('Renvoi impossible : '+r.error.message,'error')}
+            else{show('E-mail de confirmation renvoyé. Vérifiez votre boîte de réception (et les indésirables).','ok')}
+            resendBtn.disabled=false;resendBtn.textContent='Renvoyer l’e-mail de confirmation';
+          };
+        }else{
+          show(error.message,'error');
+        }
+        if(btn){btn.disabled=false;btn.textContent='Se connecter'}
+        return;
+      }
+      show('Connexion réussie. Redirection vers votre espace…','ok');
+      setTimeout(()=>location.href='etudiant.html',700);
+    }catch(err){
+      show('Une erreur est survenue : '+(err&&err.message?err.message:'inconnue'),'error');
+      if(btn){btn.disabled=false;btn.textContent='Se connecter'}
+    }
+  });
+})();
+</script></body></html>

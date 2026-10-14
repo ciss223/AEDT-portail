@@ -1,0 +1,20 @@
+# Fichiers système et éditeurs
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
+
+# Dépendances éventuelles
+node_modules/
+
+# IMPORTANT : ne versionnez JAMAIS la clé service_role de Supabase.
+# La clé publique (anon/publishable) présente dans config.js est faite
+# pour être exposée côté navigateur : elle est protégée par les règles RLS.
+*.local
+*.secret
+
+# Fichiers de test temporaires
+_*
+*.tmp
