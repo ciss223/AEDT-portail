@@ -9,6 +9,9 @@
 #stats .stat strong{display:block;font-size:26px;line-height:1.1;color:var(--blue,#1262a8)}
 #stats .stat span{color:var(--muted,#61748a);font-size:.85rem}
 .badge{display:inline-block;padding:4px 11px;border-radius:999px;font-size:.76rem;font-weight:800;letter-spacing:.01em;background:#edf4fc;color:#0b55a1;border:1px solid #cfe1f6}
+/* Reponse de l'AEDT dans la messagerie etudiante */
+.quote{margin-top:12px;padding:14px 16px;background:#f0f7ff;border-left:4px solid var(--blue,#1262a8);border-radius:0 12px 12px 0;line-height:1.6}
+.quote small{display:block;margin-top:8px;color:var(--muted,#61748a)}
 @media(max-width:850px){#stats{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){#stats{grid-template-columns:1fr}}
 
