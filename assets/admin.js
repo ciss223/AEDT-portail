@@ -440,7 +440,7 @@
     $('#document-page').textContent = `Page ${state.documentPage + 1} / ${Math.max(1, Math.ceil(state.totalDocuments / PAGE_SIZE))}`;
     $('#document-prev').disabled = state.documentPage === 0;
     $('#document-next').disabled = (state.documentPage + 1) * PAGE_SIZE >= state.totalDocuments;
-    const typeName = type => type === 'docs_demande_logement' ? 'Docs de demande de logement' : type;
+    const typeName = type => type === 'carte_identite' ? 'Carte d’identité' : type === 'docs_demande_logement' ? 'Docs de demande de logement' : type;
     $('#document-rows').innerHTML = state.pageDocuments.length ? state.pageDocuments.map(doc => `<tr>
       <td>${escapeHtml(doc.original_name)}</td><td>${escapeHtml(typeName(doc.file_type))}</td>
       <td><button class="record-link document-request-open" data-id="${escapeHtml(doc.request_id)}">${escapeHtml(doc.request_code)}</button></td>
