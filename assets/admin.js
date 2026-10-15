@@ -31,6 +31,8 @@
     pageDocuments: [],
     pageMessages: [],
     presidentId: null,
+    presidentPhotoUrl: null,
+    presidentVideoUrl: null,
     requestUserId: null,
     requestSearchTimer: null
   };
@@ -534,14 +536,16 @@
 
   async function loadNews() {
     const { data, error } = await state.client.from('news')
-      .select('id,title,category,published,published_at,created_at').order('created_at', { ascending: false }).limit(50);
+      .select('id,title,category,published,published_at,created_at,image_url,video_url').order('created_at', { ascending: false }).limit(50);
     if (error) {
       $('#news-list').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       return;
     }
-    $('#news-list').innerHTML = data?.length ? data.map(item => `<div class="content-entry">
-      <strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.category || 'Actualité')} · ${item.published ? 'Publiée' : 'Brouillon'} · ${dateFormat(item.published_at || item.created_at)}</small>
-      </div>`).join('') : '<p class="empty-state">Aucune actualité publiée.</p>';
+    $('#news-list').innerHTML = data?.length ? data.map(item => `<div class="content-entry">`
+      + (item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" class="content-thumb">` : '')
+      + (item.video_url ? `<span class="content-badge">Vidéo</span>` : '')
+      + `<strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.category || 'Actualité')} · ${item.published ? 'Publiée' : 'Brouillon'} · ${dateFormat(item.published_at || item.created_at)}</small>`
+      + `</div>`).join('') : '<p class="empty-state">Aucune actualité publiée.</p>';
   }
 
   async function loadGallery() {
@@ -572,6 +576,21 @@
     $('#president-education').value = profile.education || '';
     $('#president-professional').value = profile.professional || '';
     $('#president-association').value = profile.association || '';
+    state.presidentPhotoUrl = profile.photo_url || null;
+    state.presidentVideoUrl = profile.video_url || null;
+    const apercu = $('#president-media-preview');
+    if (apercu) {
+      const morceaux = [];
+      if (state.presidentPhotoUrl) {
+        morceaux.push(`<img src="${escapeHtml(state.presidentPhotoUrl)}" alt="Photo actuelle" style="max-height:140px;border-radius:12px">`);
+      }
+      if (state.presidentVideoUrl) {
+        morceaux.push(`<video src="${escapeHtml(state.presidentVideoUrl)}" controls style="max-height:140px;border-radius:12px"></video>`);
+      }
+      apercu.innerHTML = morceaux.length
+        ? `<small class="media-note">Média actuel — choisir un fichier le remplacera.</small>${morceaux.join('')}`
+        : '';
+    }
   }
 
   async function loadActivity() {
@@ -595,28 +614,97 @@
       <time>${dateTimeFormat(item.created_at)}</time></article>`).join('') : '<p class="empty-state">Aucune activité enregistrée.</p>';
   }
 
+  const MAX_OCTETS_MEDIA = 50 * 1024 * 1024;
+  const IMAGES_OK = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+  const VIDEOS_OK = ['mp4', 'webm', 'mov', 'ogg', 'ogv', 'm4v'];
+  const MAX_OCTETS_VIDEO = 50 * 1024 * 1024;
+
+  function extensionDe(nom) {
+    return (String(nom || '').split('.').pop() || '').toLowerCase();
+  }
+
+  function estImage(file) {
+    if (!file) return false;
+    if (file.type && file.type.indexOf('image/') === 0) return true;
+    return IMAGES_OK.includes(extensionDe(file.name));
+  }
+
+  function estVideo(file) {
+    if (!file) return false;
+    if (file.type && file.type.indexOf('video/') === 0) return true;
+    return VIDEOS_OK.includes(extensionDe(file.name));
+  }
+
+  // Téléverse un média dans le bucket public « media » et renvoie son URL.
+  // kind : 'image' ou 'video' — détermine le contrôle de format et la taille.
+  async function televerserMedia(file, kind) {
+    if (!file || !file.size) return null;
+    const ext = extensionDe(file.name);
+    if (kind === 'image') {
+      if (!estImage(file)) throw new Error(`« ${file.name} » n’est pas une image reconnue.`);
+      if (file.size > MAX_OCTETS_MEDIA) throw new Error(`« ${file.name} » dépasse 50 Mo.`);
+    } else {
+      if (!estVideo(file)) throw new Error(`« ${file.name} » n’est pas une vidéo reconnue.`);
+      if (file.size > MAX_OCTETS_VIDEO) throw new Error(`« ${file.name} » dépasse 50 Mo.`);
+    }
+    const chemin = `${kind}/${crypto.randomUUID()}.${ext}`;
+    const resultat = await state.client.storage.from('media').upload(chemin, file, {
+      contentType: file.type || 'application/octet-stream',
+      upsert: false
+    });
+    if (resultat.error) throw resultat.error;
+    return state.client.storage.from('media').getPublicUrl(chemin).data.publicUrl;
+  }
+
+  // Affiche un aperçu local (URL temporaire) du fichier choisi.
+  function apercuLocal(input, conteneur) {
+    if (!input || !conteneur) return;
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    if (estImage(file)) {
+      conteneur.innerHTML = `<img src="${url}" alt="Aperçu" style="max-height:150px;border-radius:12px">`;
+    } else if (estVideo(file)) {
+      conteneur.innerHTML = `<video src="${url}" controls style="max-height:150px;border-radius:12px"></video>`;
+    }
+  }
+
   async function submitNews(event) {
     event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    const { error } = await state.client.from('news').insert({
-      title: $('#news-title').value.trim(),
-      category: $('#news-category').value.trim() || 'Actualité',
-      excerpt: $('#news-excerpt').value.trim() || null,
-      content: $('#news-content').value.trim() || null,
-      image_url: $('#news-image').value.trim() || null,
-      published: true,
-      published_at: new Date().toISOString()
-    });
-    button.disabled = false;
-    if (error) {
-      notify(`Impossible de publier cette actualité : ${error.message}`, 'error');
-      return;
+    // event.submitter peut être absent (soumission programmatique) : on retombe sur le bouton du formulaire.
+    const button = event.submitter || $('#news-form button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const photo = $('#news-photo').files[0];
+      const video = $('#news-video').files[0];
+      const imageUrl = photo ? await televerserMedia(photo, 'image') : null;
+      const videoUrl = video ? await televerserMedia(video, 'video') : null;
+      const payload = {
+        title: $('#news-title').value.trim(),
+        category: $('#news-category').value.trim() || 'Actualité',
+        excerpt: $('#news-excerpt').value.trim() || null,
+        content: $('#news-content').value.trim() || null,
+        image_url: imageUrl,
+        video_url: videoUrl,
+        video_caption: $('#news-video-caption').value.trim() || null,
+        published: true,
+        published_at: new Date().toISOString()
+      };
+      const { error } = await state.client.from('news').insert(payload);
+      if (error) {
+        notify(`Impossible de publier cette actualité : ${error.message}`, 'error');
+        return;
+      }
+      event.currentTarget.reset();
+      $('#news-media-preview').innerHTML = '';
+      $('#news-category').value = 'Actualité';
+      notify('Actualité publiée sur le portail.');
+      await Promise.all([loadNews(), loadDashboard()]);
+    } catch (error) {
+      notify(`Échec de la publication : ${error.message}`, 'error');
+    } finally {
+      button.disabled = false;
     }
-    event.currentTarget.reset();
-    $('#news-category').value = 'Actualité';
-    notify('Actualité publiée sur le portail.');
-    await Promise.all([loadNews(), loadDashboard()]);
   }
 
   async function uploadGallery(event) {
@@ -711,28 +799,47 @@
 
   async function savePresident(event) {
     event.preventDefault();
-    const payload = {
-      name: $('#president-name').value.trim(),
-      role: $('#president-role').value.trim(),
-      quote: $('#president-quote').value.trim(),
-      education: $('#president-education').value.trim(),
-      professional: $('#president-professional').value.trim(),
-      association: $('#president-association').value.trim(),
-      active: true
-    };
-    if (!payload.name) {
-      notify('Le nom du Président est requis pour enregistrer son profil.', 'error');
-      return;
+    const button = event.submitter || $('#president-form button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      // Les médias ne sont téléversés que si un nouveau fichier est choisi :
+      // sinon les URL déjà enregistrées sont conservées.
+      const photo = $('#president-photo').files[0];
+      const video = $('#president-video').files[0];
+      const photoUrl = photo ? await televerserMedia(photo, 'image') : state.presidentPhotoUrl;
+      const videoUrl = video ? await televerserMedia(video, 'video') : state.presidentVideoUrl;
+
+      const payload = {
+        name: $('#president-name').value.trim(),
+        role: $('#president-role').value.trim(),
+        quote: $('#president-quote').value.trim(),
+        photo_url: photoUrl || null,
+        video_url: videoUrl || null,
+        education: $('#president-education').value.trim(),
+        professional: $('#president-professional').value.trim(),
+        association: $('#president-association').value.trim(),
+        active: true
+      };
+      if (!payload.name) {
+        notify('Le nom du Président est requis pour enregistrer son profil.', 'error');
+        return;
+      }
+      const result = state.presidentId
+        ? await state.client.from('president_profile').update(payload).eq('id', state.presidentId)
+        : await state.client.from('president_profile').insert(payload).select('id').single();
+      if (result.error) {
+        notify(`Impossible d’enregistrer le profil : ${result.error.message}`, 'error');
+        return;
+      }
+      if (result.data?.id) state.presidentId = result.data.id;
+      // On mémorise les URL pour ne pas re-téléverser au prochain enregistrement.
+      state.presidentPhotoUrl = payload.photo_url;
+      state.presidentVideoUrl = payload.video_url;
+      $('#president-media-preview').innerHTML = '';
+      notify('Profil du Président enregistré.');
+    } finally {
+      if (button) button.disabled = false;
     }
-    const result = state.presidentId
-      ? await state.client.from('president_profile').update(payload).eq('id', state.presidentId)
-      : await state.client.from('president_profile').insert(payload).select('id').single();
-    if (result.error) {
-      notify(`Impossible d’enregistrer le profil : ${result.error.message}`, 'error');
-      return;
-    }
-    if (result.data?.id) state.presidentId = result.data.id;
-    notify('Profil du Président enregistré.');
   }
 
   async function exportRequests() {
@@ -948,6 +1055,10 @@
   bindPagination('document', 'documentPage', loadDocuments);
   bindPagination('message', 'messagePage', loadMessages);
   $('#news-form').addEventListener('submit', submitNews);
+  $('#news-photo').addEventListener('change', e => apercuLocal(e.target, $('#news-media-preview')));
+  $('#news-video').addEventListener('change', e => apercuLocal(e.target, $('#news-media-preview')));
+  $('#president-photo').addEventListener('change', e => apercuLocal(e.target, $('#president-media-preview')));
+  $('#president-video').addEventListener('change', e => apercuLocal(e.target, $('#president-media-preview')));
   $('#gallery-form').addEventListener('submit', uploadGallery);
   $('#president-form').addEventListener('submit', savePresident);
   $('#student-edit-form').addEventListener('submit', saveStudent);

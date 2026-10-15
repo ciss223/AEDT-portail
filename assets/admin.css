@@ -33,6 +33,12 @@
 .admin-nav-link:hover{background:#ffffff0d;color:#fff}
 .admin-nav-link.is-active{background:#ffffff16;color:#fff;box-shadow:inset 3px 0 #e3b74e}
 .nav-icon{width:20px;font-size:1.02rem;text-align:center;color:#adc5db}
+/* Apercu des medias (photo / video) dans les formulaires d'administration */
+.media-preview{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}
+.media-preview img,.media-preview video{border:1px solid var(--admin-line,#dce6f0)}
+.media-note{flex-basis:100%;color:var(--admin-muted,#61748a);font-size:.78rem}
+.content-thumb{width:64px;height:44px;object-fit:cover;border-radius:7px;margin-right:10px;vertical-align:middle}
+.content-badge{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:999px;background:#eef4fb;color:#0b55a1;font-size:.68rem;font-weight:800}
 .nav-count{margin-left:auto;padding:2px 7px;border-radius:20px;background:#ffffff1a;color:#fff;font-size:.7rem}
 .nav-upcoming{justify-content:space-between;color:#9cb0c4;cursor:default}
 .nav-upcoming small{font-size:.62rem;background:#ffffff10;padding:3px 6px;border-radius:12px}

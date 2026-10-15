@@ -78,6 +78,22 @@ create policy "public_read_gallery_images" on storage.objects for select to anon
 drop policy if exists "admins_delete_gallery" on storage.objects;
 create policy "admins_delete_gallery" on storage.objects for delete to authenticated using (bucket_id='gallery');
 
+-- Photos et vidéos des actualités et du profil du Président.
+-- Aucune restriction de type MIME : le bucket accepte images et vidéos.
+-- Limite portée à 50 Mo pour permettre des clips courts.
+insert into storage.buckets (id,name,public,file_size_limit)
+values ('media','media',true,52428800)
+on conflict (id) do update set public=true, file_size_limit=52428800;
+drop policy if exists "admins_upload_media" on storage.objects;
+create policy "admins_upload_media" on storage.objects for insert to authenticated
+with check (bucket_id='media' and public.is_admin());
+drop policy if exists "public_read_media" on storage.objects;
+create policy "public_read_media" on storage.objects for select to anon,authenticated
+using (bucket_id='media');
+drop policy if exists "admins_delete_media" on storage.objects;
+create policy "admins_delete_media" on storage.objects for delete to authenticated
+using (bucket_id='media' and public.is_admin());
+
 -- ============================================================
 -- AEDT V4 : espace étudiant, profils, notifications et rôles
 -- ============================================================
@@ -99,6 +115,12 @@ alter table public.housing_requests add column if not exists user_id uuid refere
 -- Coordonnées du tuteur / responsable de l'étudiant (formulaire simplifié).
 alter table public.housing_requests add column if not exists email_tuteur text;
 alter table public.housing_requests add column if not exists telephone_tuteur text;
+
+-- Médias des actualités et du profil du Président.
+alter table public.news add column if not exists video_url text;
+alter table public.news add column if not exists video_caption text;
+alter table public.president_profile add column if not exists photo_url text;
+alter table public.president_profile add column if not exists video_url text;
 
 alter table public.profiles enable row level security;
 alter table public.notifications enable row level security;
