@@ -190,7 +190,7 @@
     const to = $('#request-to').value;
     const sort = $('#request-sort').value;
     let query = state.client.from('housing_requests').select(
-      'id,dossier_code,nom,prenom,matricule,telephone,email,etablissement,filiere,niveau,sexe,logement,adresse,message,status,admin_note,user_id,created_at,updated_at',
+      'id,dossier_code,nom,prenom,telephone,email,email_tuteur,telephone_tuteur,etablissement,filiere,niveau,sexe,adresse,message,status,admin_note,user_id,created_at,updated_at',
       { count: 'exact' }
     );
     if (status) query = query.eq('status', status);
@@ -199,7 +199,7 @@
     if (to) query = query.lt('created_at', `${to}T23:59:59.999`);
     if (search) {
       const term = `%${search}%`;
-      query = query.or(`dossier_code.ilike.${term},nom.ilike.${term},prenom.ilike.${term},matricule.ilike.${term}`);
+      query = query.or(`dossier_code.ilike.${term},nom.ilike.${term},prenom.ilike.${term},telephone.ilike.${term}`);
     }
     const ascending = sort === 'oldest';
     query = query.order(sort === 'updated' ? 'updated_at' : 'created_at', { ascending })
@@ -225,15 +225,15 @@
   function renderRequests(items) {
     $('#request-rows').innerHTML = items.length ? items.map(item => `<tr>
       <td><button class="record-link request-open" data-id="${escapeHtml(item.id)}">${escapeHtml(item.dossier_code)}</button></td>
-      <td class="student-name"><strong>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)}</strong><small>${escapeHtml(item.matricule)}</small></td>
-      <td>${escapeHtml(item.etablissement)}</td><td>${escapeHtml(item.logement)}</td><td>${dateFormat(item.created_at)}</td>
+      <td class="student-name"><strong>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)}</strong><small>${escapeHtml(item.telephone)}</small></td>
+      <td>${escapeHtml(item.etablissement)}</td><td>${escapeHtml(item.niveau)}</td><td>${dateFormat(item.created_at)}</td>
       <td><select class="row-select request-status-edit" data-id="${escapeHtml(item.id)}" aria-label="Modifier le statut ${escapeHtml(item.dossier_code)}">
         ${['En attente', 'En étude', 'Acceptée', 'Refusée'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select></td>
       <td><button class="row-action request-open" data-id="${escapeHtml(item.id)}">Ouvrir le dossier</button></td></tr>`).join('')
       : '<tr><td colspan="7">Aucun dossier ne correspond à ces critères.</td></tr>';
     $('#request-cards').innerHTML = items.length ? items.map(item => `<article class="mobile-record">
       <div class="mobile-record-head"><h3><button class="record-link request-open" data-id="${escapeHtml(item.id)}">${escapeHtml(item.dossier_code)}</button></h3>${badge(item.status)}</div>
-      <p>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)} · ${escapeHtml(item.etablissement)}<br>${escapeHtml(item.logement)} · ${dateFormat(item.created_at)}</p>
+      <p>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)} · ${escapeHtml(item.etablissement)}<br>${escapeHtml(item.niveau)} · ${dateFormat(item.created_at)}</p>
       <select class="row-select request-status-edit" data-id="${escapeHtml(item.id)}" aria-label="Modifier le statut ${escapeHtml(item.dossier_code)}">
         ${['En attente', 'En étude', 'Acceptée', 'Refusée'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select></article>`).join('')
       : '<p class="empty-state">Aucun dossier ne correspond à ces critères.</p>';
@@ -276,11 +276,12 @@
     ]);
     detail.innerHTML = `<div class="detail-heading"><span class="admin-kicker">DOSSIER DE LOGEMENT</span>
       <h2>${escapeHtml(item.dossier_code)} ${badge(item.status)}</h2><p>Soumis le ${dateTimeFormat(item.created_at)} · Mis à jour le ${dateTimeFormat(item.updated_at)}</p></div>
-      <div class="detail-grid">${field('Nom complet', `${item.prenom} ${item.nom}`)}${field('Matricule', item.matricule)}
+      <div class="detail-grid">${field('Nom complet', `${item.prenom} ${item.nom}`)}
       ${field('Téléphone', item.telephone)}${field('E-mail déclaré', item.email)}${field('Établissement', item.etablissement)}
-      ${field('Filière', item.filiere)}${field('Niveau', item.niveau)}${field('Logement demandé', item.logement)}
+      ${field('Filière', item.filiere)}${field('Niveau', item.niveau)}
+      ${field('E-mail du tuteur', item.email_tuteur)}${field('Téléphone du tuteur', item.telephone_tuteur)}
       ${field('Adresse / quartier', item.adresse)}${field('Sexe', item.sexe)}</div>
-      <div class="detail-section"><h3>Situation et note communiquées</h3><p>${escapeHtml(item.message || 'Aucun complément communiqué.')}</p>
+      <div class="detail-section"><h3>Note communiquée</h3><p>${escapeHtml(item.message || 'Aucun complément communiqué.')}</p>
       ${item.admin_note ? `<p><strong>Note administrative :</strong> ${escapeHtml(item.admin_note)}</p>` : ''}</div>
       <div class="detail-section"><h3>Pièces justificatives</h3><div id="detail-documents">${docsError
         ? `<p class="error">${escapeHtml(docsError.message)}</p>`
@@ -439,7 +440,7 @@
     $('#document-page').textContent = `Page ${state.documentPage + 1} / ${Math.max(1, Math.ceil(state.totalDocuments / PAGE_SIZE))}`;
     $('#document-prev').disabled = state.documentPage === 0;
     $('#document-next').disabled = (state.documentPage + 1) * PAGE_SIZE >= state.totalDocuments;
-    const typeName = type => type === 'piece_identite' ? 'Pièce d’identité' : type === 'certificat_scolarite' ? 'Certificat de scolarité' : type;
+    const typeName = type => type === 'docs_demande_logement' ? 'Docs de demande de logement' : type;
     $('#document-rows').innerHTML = state.pageDocuments.length ? state.pageDocuments.map(doc => `<tr>
       <td>${escapeHtml(doc.original_name)}</td><td>${escapeHtml(typeName(doc.file_type))}</td>
       <td><button class="record-link document-request-open" data-id="${escapeHtml(doc.request_id)}">${escapeHtml(doc.request_code)}</button></td>
@@ -767,7 +768,7 @@
       rows.push(...(data || []));
       if (!data?.length || rows.length >= total) break;
     }
-    const columns = ['dossier_code', 'nom', 'prenom', 'matricule', 'telephone', 'email', 'etablissement', 'filiere', 'niveau', 'logement', 'status', 'created_at', 'updated_at'];
+    const columns = ['dossier_code', 'nom', 'prenom', 'telephone', 'email', 'email_tuteur', 'telephone_tuteur', 'etablissement', 'filiere', 'niveau', 'sexe', 'adresse', 'status', 'created_at', 'updated_at'];
     // Neutralise l'injection de formules (=, +, -, @, tab, CR) a l'ouverture dans un tableur.
     const csvCell = value => {
       let text = String(value ?? '');

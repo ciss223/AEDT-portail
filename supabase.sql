@@ -96,6 +96,9 @@ create table if not exists public.notifications(
 );
 
 alter table public.housing_requests add column if not exists user_id uuid references auth.users(id) on delete set null;
+-- Coordonnées du tuteur / responsable de l'étudiant (formulaire simplifié).
+alter table public.housing_requests add column if not exists email_tuteur text;
+alter table public.housing_requests add column if not exists telephone_tuteur text;
 
 alter table public.profiles enable row level security;
 alter table public.notifications enable row level security;
