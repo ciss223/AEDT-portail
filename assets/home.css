@@ -527,16 +527,20 @@ section { scroll-margin-top: 88px; }
 }
 
 /* --- Chiffres Clés (Stats) Glass Capsules --- */
-.stats {
-  background: transparent;
+section.stats, .home-stats-section {
+  display: block !important;
+  width: 100% !important;
+  background: transparent !important;
   position: relative;
   z-index: 5;
+  padding: 0 !important;
 }
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-  padding: 48px 0;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 24px !important;
+  padding: 44px 0 !important;
+  width: 100% !important;
 }
 .stat {
   text-align: center;
@@ -550,6 +554,7 @@ section { scroll-margin-top: 88px; }
   transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease, border-color 0.24s ease;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 .stat::before {
   content: "";
@@ -1134,7 +1139,7 @@ section { scroll-margin-top: 88px; }
   .quick { grid-template-columns: repeat(2, 1fr); }
   .steps { grid-template-columns: 1fr; }
   .news-grid { grid-template-columns: 1fr 1fr; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px !important; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .president { grid-template-columns: 1fr; text-align: center; padding: 32px 24px; }
   .president-art { margin: 0 auto; width: 200px; height: 260px; border-radius: 24px; }
@@ -1220,7 +1225,8 @@ section { scroll-margin-top: 88px; }
   .marquee-ticker { padding: 10px 0; }
   .marquee-content { gap: 24px; padding-right: 24px; }
   .marquee-content span { font-size: 0.76rem; gap: 8px; }
-  .quick, .news-grid, .footer-grid, .stats-grid { grid-template-columns: 1fr; }
+  .quick, .news-grid, .footer-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr !important; }
   .cta { padding: 42px 24px; }
   .quick-card, .step, .news-card, .president, .stat {
     backdrop-filter: blur(12px) saturate(160%);
