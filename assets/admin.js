@@ -1897,12 +1897,27 @@
   $('#create-admin-dialog')?.addEventListener('click', event => {
     if (event.target === event.currentTarget) event.currentTarget.close();
   });
-  $('#global-search').addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      $('#request-search').value = event.currentTarget.value;
-      setView('requests');
-    }
-  });
+  const globalSearchInput = $('#global-search');
+  const globalSearchWrap = $('.global-search');
+  if (globalSearchInput && globalSearchWrap) {
+    globalSearchWrap.addEventListener('click', () => {
+      if (document.activeElement !== globalSearchInput) {
+        globalSearchWrap.classList.add('is-active');
+        globalSearchInput.focus();
+      }
+    });
+    globalSearchInput.addEventListener('blur', () => {
+      globalSearchWrap.classList.remove('is-active');
+    });
+    globalSearchInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        $('#request-search').value = event.currentTarget.value;
+        globalSearchInput.blur();
+        globalSearchWrap.classList.remove('is-active');
+        setView('requests');
+      }
+    });
+  }
 
   boot();
 })();
