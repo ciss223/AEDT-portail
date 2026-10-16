@@ -56,28 +56,49 @@ section{scroll-margin-top:88px}
 .nav-links .btn{padding:10px 18px}
 .nav-links .btn:hover{color:#17243a;background:var(--gold-dark)}
 
-/* --- Banniere (hero) --- */
-.hero{position:relative;overflow:hidden;color:#fff;background:
-  radial-gradient(ellipse at 82% 18%,rgba(93,174,244,.30),transparent 40%),
-  radial-gradient(ellipse at 6% 100%,rgba(242,182,50,.22),transparent 38%),
-  linear-gradient(115deg,#031f3e 0%,#0757a8 68%,#1262a8 100%)}
-/* Vidéo de fond */
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(115deg,rgba(3,20,42,.88) 0%,rgba(7,60,120,.66) 58%,rgba(18,98,168,.58) 100%)}
-/* Halos de lumière flous animés */
-.hero::before{content:"";position:absolute;z-index:2;width:520px;height:520px;border-radius:50%;top:-160px;right:-120px;background:radial-gradient(circle,rgba(93,174,244,.45),transparent 70%);filter:blur(30px);animation:float 14s ease-in-out infinite;pointer-events:none}
-.hero::after{content:"";position:absolute;inset:0;z-index:3;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;pointer-events:none}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(26px)}}
+/* --- Banniere (hero) avec photo de batiment --- */
+.hero{position:relative;overflow:hidden;color:#fff;background:#031830}
+.hero-bg-image{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-position:center 32%;z-index:0;transform:scale(1.02);animation:heroBuildingZoom 28s ease-in-out infinite alternate}
+@keyframes heroBuildingZoom{0%{transform:scale(1.02)}100%{transform:scale(1.08)}}
+.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(125deg,rgba(3,18,38,.90) 0%,rgba(6,38,78,.82) 48%,rgba(11,85,161,.64) 100%);backdrop-filter:blur(1.5px);-webkit-backdrop-filter:blur(1.5px)}
+/* Halos de lumière décoratifs */
+.hero::before{content:"";position:absolute;z-index:2;width:560px;height:560px;border-radius:50%;top:-180px;right:-120px;background:radial-gradient(circle,rgba(255,189,46,.22),transparent 68%);filter:blur(40px);animation:float 14s ease-in-out infinite;pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;z-index:3;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(24px)}}
 .hero .wrap{position:relative;z-index:4}
-.hero-inner{position:relative;padding:96px 0 100px;max-width:720px}
-.eyebrow{text-transform:uppercase;letter-spacing:.2em;font-size:.76rem;font-weight:800;color:#ffcf66}
-.hero h1{font-size:clamp(2.3rem,5vw,4rem);line-height:1.08;margin:16px 0 18px;font-weight:850;text-shadow:0 4px 30px rgba(0,0,0,.25)}
+.hero-inner{position:relative;padding:92px 0 96px;max-width:760px}
+
+/* Ticker Pill & Mots rotatifs animés */
+.hero-ticker-pill{display:inline-flex;align-items:center;gap:10px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 18px rgba(0,0,0,.15);margin-bottom:18px;max-width:100%}
+.ticker-pulse{width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.35);animation:pulseGreen 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 3px rgba(52,211,153,.35)}50%{box-shadow:0 0 0 7px rgba(52,211,153,0)}}
+.ticker-tag{background:var(--gold);color:#051a34;font-size:.68rem;font-weight:850;letter-spacing:.08em;padding:3px 8px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.ticker-text{font-size:.82rem;color:#f0f7ff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.hero h1{font-size:clamp(2.3rem,5vw,3.9rem);line-height:1.08;margin:14px 0 16px;font-weight:850;text-shadow:0 4px 30px rgba(0,0,0,.35)}
 .hero h1 span{color:var(--gold)}
-.hero p{font-size:1.12rem;max-width:580px;color:#e6edf7}
+.hero p{font-size:1.15rem;max-width:620px;color:#e8f2fc;line-height:1.6}
+.rotating-word-container{display:inline-block;vertical-align:baseline;position:relative}
+.rotating-keyword{display:inline-block;color:var(--gold);font-weight:850;text-decoration:underline;text-decoration-color:rgba(255,189,46,.55);text-underline-offset:4px;transition:opacity .32s ease,transform .32s ease;transform:translateY(0);opacity:1}
+.rotating-keyword.is-changing{opacity:0;transform:translateY(-8px)}
+
 .hero .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.hero-badges{display:flex;gap:14px;flex-wrap:wrap;margin-top:38px;padding:18px;border-radius:18px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hero-badges{display:flex;gap:14px;flex-wrap:wrap;margin-top:38px;padding:18px;border-radius:18px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,.15)}
 .hero-badges span{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;color:#e9f1fb;font-weight:600}
 .hero-badges b{color:var(--gold)}
+
+/* --- Bandeau Défilant Infini (Marquee Ticker) --- */
+.marquee-ticker{position:relative;overflow:hidden;background:linear-gradient(90deg,#031326 0%,#072a54 50%,#031326 100%);border-top:1px solid rgba(255,189,46,.45);border-bottom:1px solid rgba(255,189,46,.45);box-shadow:0 6px 24px rgba(0,0,0,.22);padding:14px 0;z-index:5;user-select:none}
+.marquee-ticker::before,.marquee-ticker::after{content:"";position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
+.marquee-ticker::before{left:0;background:linear-gradient(90deg,#031326,transparent)}
+.marquee-ticker::after{right:0;background:linear-gradient(-90deg,#031326,transparent)}
+.marquee-track{display:flex;width:max-content;animation:marqueeScroll 34s linear infinite}
+.marquee-track:hover{animation-play-state:paused}
+.marquee-content{display:flex;align-items:center;gap:36px;padding-right:36px;flex-shrink:0}
+.marquee-content span{display:inline-flex;align-items:center;gap:12px;color:#e8f2fc;font-size:.86rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.marquee-content .spark{color:var(--gold);font-size:1.15rem;text-shadow:0 0 10px rgba(255,189,46,.75);animation:pulseSpark 2s ease-in-out infinite}
+@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes pulseSpark{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.2);opacity:1}}
 
 /* --- Chiffres cles --- */
 .stats{background:transparent;border-bottom:1px solid rgba(255,255,255,.5);position:relative}
@@ -168,24 +189,116 @@ section{scroll-margin-top:88px}
   .president blockquote{text-align:left}
   .section-head{flex-direction:column;align-items:flex-start}
 }
-/* Navigation : menu déroulant avant tout retour à la ligne */
+/* Navigation : menu déroulant sur une seule ligne parfaitement alignée */
 @media(max-width:1180px){
-  header .nav{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}
-  header .nav-toggle{display:inline-flex;margin-left:auto}
-  header nav.nav-links{display:none;flex-basis:100%;flex-direction:column;align-items:stretch;gap:4px;width:100%;padding:8px 0 14px}
-  header.nav-open nav.nav-links{display:flex}
-  header nav.nav-links a{width:100%;justify-content:flex-start;text-align:left;padding:11px 14px}
-  header nav.nav-links .btn{justify-content:center;margin-top:6px}
+  header .nav{
+    flex-direction:row;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:64px;
+    padding:8px 0;
+  }
+  header .brand{
+    flex:1 1 auto;
+    min-width:0;
+    gap:10px;
+  }
+  header .brand span{
+    min-width:0;
+    overflow:hidden;
+  }
+  header .brand small{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:260px;
+  }
+  header .nav-toggle{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    margin-left:auto;
+    min-height:38px;
+    height:38px;
+    padding:0 13px;
+    font-size:.84rem;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(9,45,87,.08);
+  }
+  header nav.nav-links{
+    display:none;
+    flex-basis:100%;
+    width:100%;
+    order:3;
+    flex-direction:column;
+    align-items:stretch;
+    gap:4px;
+    padding:12px 0 16px;
+    border-top:1px solid rgba(11,85,161,.12);
+    margin-top:6px;
+  }
+  header.nav-open nav.nav-links{
+    display:flex;
+  }
+  header nav.nav-links a{
+    width:100%;
+    justify-content:flex-start;
+    text-align:left;
+    padding:11px 14px;
+  }
+  header nav.nav-links .btn{
+    justify-content:center;
+    margin-top:6px;
+  }
+}
+@media(max-width:600px){
+  header .nav{
+    min-height:58px;
+  }
+  header .brand{
+    font-size:1.15rem;
+    gap:9px;
+  }
+  header .brand img{
+    width:42px;
+    height:42px;
+  }
+  header .brand small{
+    font-size:.64rem;
+    max-width:160px;
+  }
+  header .nav-toggle{
+    min-height:36px;
+    height:36px;
+    padding:0 11px;
+    font-size:.8rem;
+    border-radius:8px;
+  }
+}
+@media(max-width:400px){
+  header .brand small{
+    display:none;
+  }
 }
 @media(max-width:560px){
   .nav-links{gap:8px}
   .nav-links a{font-size:.85rem;padding:8px 10px}
-  .hero-inner{padding:60px 0 66px}
+  .hero-inner{padding:54px 0 58px}
+  .hero-ticker-pill{padding:5px 12px;gap:7px;margin-bottom:14px}
+  .ticker-text{font-size:.74rem}
+  .hero h1{font-size:clamp(1.85rem,7.8vw,2.5rem);line-height:1.12}
+  .hero p{font-size:.98rem}
+  .marquee-ticker{padding:10px 0}
+  .marquee-content{gap:22px;padding-right:22px}
+  .marquee-content span{font-size:.75rem;gap:8px}
   .quick,.news-grid,.footer-grid{grid-template-columns:1fr}
   .cta{padding:40px 24px}
   .quick-card,.step,.news-card,.president,.stat{backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%)}
-
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition:none!important}
+  .hero-bg-image,.marquee-track{animation:none!important}
 }

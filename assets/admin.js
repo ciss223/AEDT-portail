@@ -13,6 +13,8 @@
   const state = {
     client: window.AEDT?.getSupabaseClient?.() || null,
     user: null,
+    currentUserProfile: null,
+    isSuperAdmin: false,
     dashboard: null,
     requestPage: 0,
     studentPage: 0,
@@ -34,7 +36,11 @@
     presidentPhotoUrl: null,
     presidentVideoUrl: null,
     requestUserId: null,
-    requestSearchTimer: null
+    requestSearchTimer: null,
+    videos: [],
+    editingNewsId: null,
+    editingNewsPhotoUrl: null,
+    editingNewsVideoUrl: null
   };
 
   function notify(message, kind = 'success') {
@@ -49,15 +55,44 @@
     return ({
       overview: 'Vue générale',
       requests: 'Demandes de logement',
-      students: 'Étudiants',
+      students: 'Étudiants & Rôles',
       documents: 'Documents justificatifs',
       messages: 'Messagerie',
       notifications: 'Notifications',
       news: 'Actualités',
+      videos: 'Vidéos & Médias',
       gallery: 'Galerie photos',
       president: 'Profil du Président',
       activity: 'Journal des activités'
     })[view] || 'Vue générale';
+  }
+
+  function openSidebar() {
+    $('#admin-sidebar')?.classList.add('is-open');
+    $('#sidebar-overlay')?.classList.add('is-open');
+    const toggle = $('#sidebar-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.classList.add('is-active');
+    }
+  }
+
+  function closeSidebar() {
+    $('#admin-sidebar')?.classList.remove('is-open');
+    $('#sidebar-overlay')?.classList.remove('is-open');
+    const toggle = $('#sidebar-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.classList.remove('is-active');
+    }
+  }
+
+  function toggleSidebar() {
+    if ($('#admin-sidebar')?.classList.contains('is-open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
   }
 
   function setView(view, filter) {
@@ -68,7 +103,7 @@
       button.classList.toggle('is-active', button.dataset.view === view);
     });
     $('#breadcrumb').textContent = viewName(view);
-    $('#admin-sidebar').classList.remove('is-open');
+    closeSidebar();
     if (view === 'requests') {
       if (filter) $('#request-status').value = filter;
       state.requestPage = 0;
@@ -81,8 +116,12 @@
       if (filter) $('#message-status').value = filter;
       state.messagePage = 0;
       loadMessages();
+    } else if (view === 'notifications') {
+      loadBroadcastRecipients();
     } else if (view === 'news') {
       loadNews();
+    } else if (view === 'videos') {
+      loadVideos();
     } else if (view === 'gallery') {
       loadGallery();
     } else if (view === 'president') {
@@ -283,8 +322,37 @@
       ${field('Filière', item.filiere)}${field('Niveau', item.niveau)}
       ${field('E-mail du tuteur', item.email_tuteur)}${field('Téléphone du tuteur', item.telephone_tuteur)}
       ${field('Adresse / quartier', item.adresse)}${field('Sexe', item.sexe)}</div>
-      <div class="detail-section"><h3>Note communiquée</h3><p>${escapeHtml(item.message || 'Aucun complément communiqué.')}</p>
-      ${item.admin_note ? `<p><strong>Note administrative :</strong> ${escapeHtml(item.admin_note)}</p>` : ''}</div>
+      <div class="detail-section"><h3>Note communiquée par l’étudiant</h3><p>${escapeHtml(item.message || 'Aucun message particulier joint au formulaire.')}</p></div>
+      <div class="detail-section">
+        <h3>Remarques & Note interne de l’administration</h3>
+        <div class="admin-note-box">
+          <label for="request-admin-note" style="display:block;margin-bottom:6px;font-size:0.75rem;font-weight:700;color:#204060">Note administrative du dossier</label>
+          <textarea id="request-admin-note" rows="3" placeholder="Ajouter une consigne interne ou une remarque sur ce dossier…">${escapeHtml(item.admin_note || '')}</textarea>
+          <div style="margin-top:8px">
+            <button id="save-request-note" class="admin-primary" data-id="${escapeHtml(item.id)}" type="button">Enregistrer la note</button>
+          </div>
+        </div>
+
+        <div class="complement-box">
+          <h4>Demande de complément de dossier</h4>
+          ${item.user_id
+            ? '<p class="data-note" style="margin:0 0 10px;color:#185a90">✓ Ce dossier est rattaché à un compte étudiant. Une notification sera directement transmise dans son espace.</p>'
+            : '<p class="data-note" style="margin:0 0 10px;color:#8f6217">⚠️ Ce dossier a été déposé sans compte connecté. La demande sera inscrite dans les remarques du dossier.</p>'}
+          <label for="complement-template-select" style="display:block;margin-bottom:6px;font-size:0.74rem;font-weight:700;color:#52677e">Motif fréquent</label>
+          <select id="complement-template-select" class="row-select" style="width:100%;margin-bottom:10px">
+            <option value="">-- Choisir un modèle ou rédiger un texte libre ci-dessous --</option>
+            <option value="Pièce d’identité illisible ou expirée : Merci de fournir une nouvelle copie recto-verso lisible de votre pièce d’identité en cours de validité.">Pièce d’identité illisible ou expirée</option>
+            <option value="Certificat d’inscription manquant : Merci de fournir votre attestation d’inscription ou certificat de scolarité pour l’année universitaire en cours.">Certificat d’inscription / scolarité manquant</option>
+            <option value="Justificatif de garant / tuteur incomplet : Merci de préciser l’adresse exacte et de communiquer les justificatifs du garant ou tuteur.">Justificatif de garant / tuteur incomplet</option>
+            <option value="Relevé de notes manquant : Merci de transmettre la copie de votre dernier relevé de notes universitaire.">Relevé de notes manquant</option>
+          </select>
+          <label for="complement-message" style="display:block;margin-bottom:6px;font-size:0.74rem;font-weight:700;color:#52677e">Message adressé à l’étudiant</label>
+          <textarea id="complement-message" rows="3" placeholder="Précisez les pièces ou explications attendues…"></textarea>
+          <div style="margin-top:8px">
+            <button id="send-complement-btn" class="admin-primary" data-id="${escapeHtml(item.id)}" data-user-id="${escapeHtml(item.user_id || '')}" data-code="${escapeHtml(item.dossier_code)}" type="button">Envoyer la demande de complément</button>
+          </div>
+        </div>
+      </div>
       <div class="detail-section"><h3>Pièces justificatives</h3><div id="detail-documents">${docsError
         ? `<p class="error">${escapeHtml(docsError.message)}</p>`
         : docs?.length ? docs.map(doc => `<div class="recent-item"><span class="recent-primary"><strong>${escapeHtml(doc.original_name)}</strong><small>${escapeHtml(doc.file_type)} · Transmis le ${dateTimeFormat(doc.created_at)} · ${escapeHtml(doc.verification_status || 'À vérifier')}${doc.verified_at ? ` · Vérifié le ${dateTimeFormat(doc.verified_at)}` : ''}</small></span><button class="row-action signed-document" data-path="${escapeHtml(doc.file_path)}">Consulter</button></div>`).join('')
@@ -297,6 +365,72 @@
       <select id="detail-status" class="row-select">${['En attente', 'En étude', 'Acceptée', 'Refusée'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select>
       <button id="save-detail-status" class="admin-primary" data-id="${escapeHtml(item.id)}">Enregistrer le statut</button>
       <button id="open-messages-for-request" class="admin-secondary" data-go="messages">Ouvrir la messagerie</button></div></div>`;
+  }
+
+  async function saveRequestNote(id) {
+    const note = $('#request-admin-note')?.value.trim() || null;
+    const button = $('#save-request-note');
+    if (button) button.disabled = true;
+    const { error } = await state.client.from('housing_requests').update({
+      admin_note: note,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (button) button.disabled = false;
+    if (error) {
+      notify(`Impossible d’enregistrer la note : ${error.message}`, 'error');
+      return;
+    }
+    notify('Note administrative enregistrée.');
+    await openRequest(id);
+  }
+
+  async function sendComplementRequest(id, userId, dossierCode) {
+    const text = $('#complement-message')?.value.trim();
+    if (!text) {
+      notify('Précisez le motif du complément avant de l’envoyer.', 'error');
+      return;
+    }
+    const button = $('#send-complement-btn');
+    if (button) button.disabled = true;
+
+    try {
+      const now = new Date();
+      const dateStr = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(now);
+      const existingNote = $('#request-admin-note')?.value.trim();
+      const complementEntry = `[Complément demandé le ${dateStr}] ${text}`;
+      const updatedNote = existingNote ? `${existingNote}\n\n${complementEntry}` : complementEntry;
+
+      const { data: currentReq } = await state.client.from('housing_requests').select('status').eq('id', id).single();
+      const nextStatus = currentReq?.status === 'En attente' ? 'En étude' : (currentReq?.status || 'En étude');
+
+      const { error: updateError } = await state.client.from('housing_requests').update({
+        admin_note: updatedNote,
+        status: nextStatus,
+        updated_at: now.toISOString()
+      }).eq('id', id);
+
+      if (updateError) throw updateError;
+
+      if (userId) {
+        const { error: notifError } = await state.client.from('notifications').insert({
+          user_id: userId,
+          title: `Complément requis pour votre dossier ${dossierCode}`,
+          message: text,
+          read: false
+        });
+        if (notifError) console.warn('Erreur notification :', notifError);
+      }
+
+      notify(userId
+        ? 'Demande de complément envoyée (notification transmise à l’étudiant).'
+        : 'Demande de complément enregistrée sur le dossier.');
+
+      await Promise.all([loadRequests(), loadDashboard(), openRequest(id)]);
+    } catch (err) {
+      notify(`Échec de l’envoi de la demande de complément : ${err.message}`, 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
 
   async function openDocument(path) {
@@ -317,10 +451,12 @@
 
   async function loadStudents() {
     const search = safeFilterText($('#student-search').value);
+    const roleFilter = $('#student-role-filter')?.value || '';
     let query = state.client.from('profiles').select(
       'id,first_name,prenom,nom,telephone,matricule,etablissement,filiere,niveau,role,created_at',
       { count: 'exact' }
-    ).eq('role', 'student');
+    );
+    if (roleFilter) query = query.eq('role', roleFilter);
     if (search) {
       const term = `%${search}%`;
       query = query.or(`first_name.ilike.${term},prenom.ilike.${term},nom.ilike.${term},matricule.ilike.${term},etablissement.ilike.${term},filiere.ilike.${term}`);
@@ -328,10 +464,10 @@
     query = query.order($('#student-sort').value === 'name' ? 'first_name' : 'created_at',
       { ascending: $('#student-sort').value === 'name' })
       .range(state.studentPage * PAGE_SIZE, (state.studentPage + 1) * PAGE_SIZE - 1);
-    $('#student-rows').innerHTML = '<tr><td colspan="6">Chargement des profils…</td></tr>';
+    $('#student-rows').innerHTML = '<tr><td colspan="7">Chargement des utilisateurs…</td></tr>';
     const { data, error, count } = await query;
     if (error) {
-      $('#student-rows').innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+      $('#student-rows').innerHTML = `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
       $('#student-cards').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       return;
     }
@@ -344,26 +480,36 @@
         .select('user_id').in('user_id', ids);
       if (linkedError) {
         $('#student-meta').textContent = 'Erreur de chargement des demandes associées';
-        $('#student-rows').innerHTML = `<tr><td colspan="6">${escapeHtml(linkedError.message)}</td></tr>`;
+        $('#student-rows').innerHTML = `<tr><td colspan="7">${escapeHtml(linkedError.message)}</td></tr>`;
         $('#student-cards').innerHTML = `<p class="error">${escapeHtml(linkedError.message)}</p>`;
         return;
       }
       (linked || []).forEach(item => { requestCounts[item.user_id] = (requestCounts[item.user_id] || 0) + 1; });
     }
-    $('#student-meta').textContent = `${state.totalStudents} étudiant${state.totalStudents === 1 ? '' : 's'} · page par page`;
+    $('#student-meta').textContent = `${state.totalStudents} compte${state.totalStudents === 1 ? '' : 's'} enregistré${state.totalStudents === 1 ? '' : 's'}`;
     $('#student-page').textContent = `Page ${state.studentPage + 1} / ${Math.max(1, Math.ceil(state.totalStudents / PAGE_SIZE))}`;
     $('#student-prev').disabled = state.studentPage === 0;
     $('#student-next').disabled = (state.studentPage + 1) * PAGE_SIZE >= state.totalStudents;
-    const nameOf = profile => profile.first_name || profile.prenom || profile.nom || 'Profil étudiant';
+    const nameOf = profile => profile.first_name || profile.prenom || profile.nom || 'Compte AEDT';
+    const roleBadge = r => {
+      if (r === 'super_admin') {
+        return '<span class="role-badge super-admin">Super Admin 👑</span>';
+      }
+      if (r === 'admin') {
+        return '<span class="role-badge admin">Administrateur</span>';
+      }
+      return '<span class="role-badge student">Étudiant</span>';
+    };
     $('#student-rows').innerHTML = state.pageStudents.length ? state.pageStudents.map(profile => `<tr>
       <td class="student-name"><strong>${escapeHtml(`${profile.prenom || profile.first_name || ''} ${profile.nom || ''}`.trim() || nameOf(profile))}</strong><small>${escapeHtml(profile.matricule || profile.id)}</small></td>
+      <td>${roleBadge(profile.role)}</td>
       <td>${escapeHtml(profile.etablissement || '—')}</td><td>${escapeHtml(profile.filiere || '—')}</td><td>${escapeHtml(profile.niveau || '—')}</td>
       <td>${dateFormat(profile.created_at)}</td><td><button class="row-action student-edit" data-id="${escapeHtml(profile.id)}">Modifier</button> <button class="row-action student-requests" data-id="${escapeHtml(profile.id)}">${requestCounts[profile.id] || 0} dossier(s)</button></td></tr>`).join('')
-      : '<tr><td colspan="6">Aucun profil étudiant trouvé.</td></tr>';
+      : '<tr><td colspan="7">Aucun compte trouvé.</td></tr>';
     $('#student-cards').innerHTML = state.pageStudents.map(profile => `<article class="mobile-record">
-      <div class="mobile-record-head"><h3>${escapeHtml(`${profile.prenom || profile.first_name || ''} ${profile.nom || ''}`.trim() || nameOf(profile))}</h3></div>
+      <div class="mobile-record-head"><h3>${escapeHtml(`${profile.prenom || profile.first_name || ''} ${profile.nom || ''}`.trim() || nameOf(profile))}</h3>${roleBadge(profile.role)}</div>
       <p>${escapeHtml(profile.etablissement || 'Établissement non renseigné')} · ${escapeHtml(profile.filiere || 'Filière non renseignée')}<br>${escapeHtml(profile.niveau || 'Niveau non renseigné')} · Inscrit le ${dateFormat(profile.created_at)}</p>
-      <button class="row-action student-edit" data-id="${escapeHtml(profile.id)}">Modifier le profil</button>
+      <button class="row-action student-edit" data-id="${escapeHtml(profile.id)}">Modifier le profil & rôle</button>
       <button class="row-action student-requests" data-id="${escapeHtml(profile.id)}">${requestCounts[profile.id] || 0} demande(s)</button></article>`).join('');
   }
 
@@ -373,10 +519,10 @@
     form.reset();
     $('#student-edit-id').value = id;
     const { data, error } = await state.client.from('profiles')
-      .select('id,first_name,prenom,nom,telephone,matricule,etablissement,filiere,niveau')
-      .eq('id', id).eq('role', 'student').single();
+      .select('id,first_name,prenom,nom,telephone,matricule,etablissement,filiere,niveau,role')
+      .eq('id', id).single();
     if (error) {
-      notify(`Impossible de charger le profil étudiant : ${error.message}`, 'error');
+      notify(`Impossible de charger le profil : ${error.message}`, 'error');
       return;
     }
     $('#student-edit-first-name').value = data.prenom || data.first_name || '';
@@ -386,6 +532,49 @@
     $('#student-edit-school').value = data.etablissement || '';
     $('#student-edit-program').value = data.filiere || '';
     $('#student-edit-level').value = data.niveau || '';
+
+    const roleSelect = $('#student-edit-role');
+    const roleWarning = $('#student-edit-role-warning');
+    const roleNote = $('#student-edit-role-note');
+    const optSuperAdmin = $('#opt-role-super-admin');
+
+    if (optSuperAdmin) {
+      optSuperAdmin.hidden = !state.isSuperAdmin;
+      optSuperAdmin.disabled = !state.isSuperAdmin;
+    }
+
+    if (roleSelect) {
+      roleSelect.value = data.role || 'student';
+      const isSelf = state.user && state.user.id === data.id;
+      const isTargetSuper = data.role === 'super_admin';
+
+      if (isSelf) {
+        roleSelect.disabled = true;
+        if (roleNote) roleNote.textContent = 'Votre propre compte (protection contre l’auto-rétrogradation).';
+      } else if (isTargetSuper && !state.isSuperAdmin) {
+        roleSelect.disabled = true;
+        if (roleNote) roleNote.textContent = 'Ce compte est Super Administrateur. Seul un Super Administrateur peut modifier ses droits.';
+      } else {
+        roleSelect.disabled = false;
+        if (roleNote) roleNote.textContent = '';
+      }
+
+      const updateRoleWarning = () => {
+        if (!roleWarning) return;
+        if (roleSelect.value === 'super_admin') {
+          roleWarning.hidden = false;
+          roleWarning.innerHTML = '👑 <strong>Privilège Super Administrateur :</strong> ce compte disposera d’un contrôle total sur le portail et pourra créer et gérer les autres comptes administrateurs.';
+        } else if (roleSelect.value === 'admin') {
+          roleWarning.hidden = false;
+          roleWarning.innerHTML = '⚠️ <strong>Attention :</strong> le rôle <em>Administrateur</em> accorde un accès complet à la gestion des dossiers de logement, justificatifs, messageries et contenus.';
+        } else {
+          roleWarning.hidden = true;
+        }
+      };
+      updateRoleWarning();
+      roleSelect.onchange = updateRoleWarning;
+    }
+
     if (!dialog.open) dialog.showModal();
   }
 
@@ -394,8 +583,32 @@
     const form = event.currentTarget;
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
+    const targetId = $('#student-edit-id').value;
+    const isSelf = state.user && state.user.id === targetId;
+    const roleSelect = $('#student-edit-role');
+    const newRole = !isSelf && roleSelect && !roleSelect.disabled ? roleSelect.value : undefined;
+
+    if (newRole === 'super_admin') {
+      if (!state.isSuperAdmin) {
+        notify('Seul un Super Administrateur peut attribuer le rôle Super Administrateur.', 'error');
+        button.disabled = false;
+        return;
+      }
+      const confirmSuper = window.confirm('Confirmez-vous l’attribution des droits SUPER ADMINISTRATEUR 👑 à ce compte ? Cet utilisateur aura tous les privilèges, y compris la création d’autres administrateurs.');
+      if (!confirmSuper) {
+        button.disabled = false;
+        return;
+      }
+    } else if (newRole === 'admin') {
+      const confirmPromo = window.confirm('Confirmez-vous l’attribution des droits ADMINISTRATEUR à ce compte ? Cet utilisateur aura accès complet à la gestion du portail.');
+      if (!confirmPromo) {
+        button.disabled = false;
+        return;
+      }
+    }
+
     const firstName = $('#student-edit-first-name').value.trim() || null;
-    const { data, error } = await state.client.from('profiles').update({
+    const payload = {
       first_name: firstName,
       prenom: firstName,
       nom: $('#student-edit-last-name').value.trim() || null,
@@ -405,19 +618,23 @@
       filiere: $('#student-edit-program').value.trim() || null,
       niveau: $('#student-edit-level').value.trim() || null,
       updated_at: new Date().toISOString()
-    }).eq('id', $('#student-edit-id').value).eq('role', 'student').select('id').maybeSingle();
+    };
+    if (newRole) payload.role = newRole;
+
+    const { data, error } = await state.client.from('profiles').update(payload)
+      .eq('id', targetId).select('id,role').maybeSingle();
     button.disabled = false;
     if (error) {
       notify(`Impossible d’enregistrer le profil : ${error.message}`, 'error');
       return;
     }
     if (!data) {
-      notify('Le profil étudiant a changé ou n’est plus accessible. Actualisez la liste.', 'error');
+      notify('Le profil a changé ou n’est plus accessible. Actualisez la liste.', 'error');
       return;
     }
     $('#student-dialog').close();
-    notify('Profil étudiant mis à jour. La modification a été ajoutée au journal.');
-    await Promise.all([loadStudents(), loadDashboard()]);
+    notify('Compte et autorisations enregistrés avec succès.');
+    await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
   }
 
   async function loadDocuments() {
@@ -536,7 +753,7 @@
 
   async function loadNews() {
     const { data, error } = await state.client.from('news')
-      .select('id,title,category,published,published_at,created_at,image_url,video_url').order('created_at', { ascending: false }).limit(50);
+      .select('id,title,category,published,published_at,created_at,image_url,video_url,excerpt,content,video_caption').order('created_at', { ascending: false }).limit(50);
     if (error) {
       $('#news-list').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       return;
@@ -545,7 +762,82 @@
       + (item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" class="content-thumb">` : '')
       + (item.video_url ? `<span class="content-badge">Vidéo</span>` : '')
       + `<strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.category || 'Actualité')} · ${item.published ? 'Publiée' : 'Brouillon'} · ${dateFormat(item.published_at || item.created_at)}</small>`
-      + `</div>`).join('') : '<p class="empty-state">Aucune actualité publiée.</p>';
+      + `<div style="display:flex;gap:6px;margin-top:8px">`
+      + `<button class="row-action edit-news" data-id="${escapeHtml(item.id)}" type="button">Modifier</button>`
+      + `<button class="row-action toggle-news" data-id="${escapeHtml(item.id)}" data-published="${item.published ? 'true' : 'false'}" type="button">${item.published ? 'Passer en brouillon' : 'Publier'}</button>`
+      + `<button class="row-action delete-news" data-id="${escapeHtml(item.id)}" type="button" style="color:#a83232">Supprimer</button>`
+      + `</div>`
+      + `</div>`).join('') : '<p class="empty-state">Aucune actualité enregistrée.</p>';
+  }
+
+  async function editNews(id) {
+    const { data: item, error } = await state.client.from('news').select('*').eq('id', id).single();
+    if (error || !item) {
+      notify(`Impossible de charger l’actualité : ${error?.message || 'introuvable'}`, 'error');
+      return;
+    }
+    state.editingNewsId = item.id;
+    state.editingNewsPhotoUrl = item.image_url || null;
+    state.editingNewsVideoUrl = item.video_url || null;
+    $('#news-edit-id').value = item.id;
+    $('#news-title').value = item.title || '';
+    $('#news-category').value = item.category || 'Actualité';
+    $('#news-excerpt').value = item.excerpt || '';
+    $('#news-content').value = item.content || '';
+    $('#news-video-caption').value = item.video_caption || '';
+    $('#news-form-title').textContent = 'Modifier l’actualité';
+    $('#news-form-sub').textContent = 'Modification en cours — enregistrez pour appliquer les changements.';
+    $('#news-submit-btn').textContent = 'Enregistrer les modifications';
+    $('#news-cancel-btn').hidden = false;
+
+    const preview = $('#news-media-preview');
+    if (preview) {
+      const parts = [];
+      if (item.image_url) parts.push(`<img src="${escapeHtml(item.image_url)}" alt="" style="max-height:100px;border-radius:8px">`);
+      if (item.video_url) parts.push(`<video src="${escapeHtml(item.video_url)}" controls style="max-height:100px;border-radius:8px"></video>`);
+      preview.innerHTML = parts.length ? `<small class="media-note">Médias actuels conservés (choisir un fichier les remplacera) :</small>${parts.join('')}` : '';
+    }
+    $('#news-form').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelEditNews() {
+    state.editingNewsId = null;
+    state.editingNewsPhotoUrl = null;
+    state.editingNewsVideoUrl = null;
+    $('#news-form').reset();
+    $('#news-edit-id').value = '';
+    $('#news-category').value = 'Actualité';
+    $('#news-form-title').textContent = 'Publier une actualité';
+    $('#news-form-sub').textContent = 'Le contenu publié apparaît dans la section Actualités.';
+    $('#news-submit-btn').textContent = 'Publier l’actualité';
+    $('#news-cancel-btn').hidden = true;
+    $('#news-media-preview').innerHTML = '';
+  }
+
+  async function deleteNews(id) {
+    if (!window.confirm('Supprimer définitivement cette actualité du portail ?')) return;
+    const { error } = await state.client.from('news').delete().eq('id', id);
+    if (error) {
+      notify(`Impossible de supprimer l’actualité : ${error.message}`, 'error');
+      return;
+    }
+    if (state.editingNewsId === id) cancelEditNews();
+    notify('Actualité supprimée.');
+    await Promise.all([loadNews(), loadDashboard()]);
+  }
+
+  async function toggleNewsPublish(id, currentPublished) {
+    const nextState = !currentPublished;
+    const { error } = await state.client.from('news').update({
+      published: nextState,
+      published_at: nextState ? new Date().toISOString() : null
+    }).eq('id', id);
+    if (error) {
+      notify(`Impossible de modifier la publication : ${error.message}`, 'error');
+      return;
+    }
+    notify(nextState ? 'Actualité publiée sur le portail.' : 'Actualité passée en brouillon (masquée du public).');
+    await loadNews();
   }
 
   async function loadGallery() {
@@ -671,14 +963,13 @@
 
   async function submitNews(event) {
     event.preventDefault();
-    // event.submitter peut être absent (soumission programmatique) : on retombe sur le bouton du formulaire.
-    const button = event.submitter || $('#news-form button[type="submit"]');
+    const button = event.submitter || $('#news-submit-btn') || $('#news-form button[type="submit"]');
     if (button) button.disabled = true;
     try {
       const photo = $('#news-photo').files[0];
       const video = $('#news-video').files[0];
-      const imageUrl = photo ? await televerserMedia(photo, 'image') : null;
-      const videoUrl = video ? await televerserMedia(video, 'video') : null;
+      const imageUrl = photo ? await televerserMedia(photo, 'image') : state.editingNewsPhotoUrl;
+      const videoUrl = video ? await televerserMedia(video, 'video') : state.editingNewsVideoUrl;
       const payload = {
         title: $('#news-title').value.trim(),
         category: $('#news-category').value.trim() || 'Actualité',
@@ -686,24 +977,231 @@
         content: $('#news-content').value.trim() || null,
         image_url: imageUrl,
         video_url: videoUrl,
-        video_caption: $('#news-video-caption').value.trim() || null,
-        published: true,
-        published_at: new Date().toISOString()
+        video_caption: $('#news-video-caption').value.trim() || null
       };
-      const { error } = await state.client.from('news').insert(payload);
-      if (error) {
-        notify(`Impossible de publier cette actualité : ${error.message}`, 'error');
+
+      if (!payload.title) {
+        notify('Le titre de l’actualité est obligatoire.', 'error');
         return;
       }
-      event.currentTarget.reset();
-      $('#news-media-preview').innerHTML = '';
-      $('#news-category').value = 'Actualité';
-      notify('Actualité publiée sur le portail.');
+
+      if (state.editingNewsId) {
+        const { error } = await state.client.from('news').update(payload).eq('id', state.editingNewsId);
+        if (error) throw error;
+        notify('Actualité mise à jour avec succès.');
+        cancelEditNews();
+      } else {
+        payload.published = true;
+        payload.published_at = new Date().toISOString();
+        const { error } = await state.client.from('news').insert(payload);
+        if (error) throw error;
+        event.currentTarget.reset();
+        $('#news-media-preview').innerHTML = '';
+        $('#news-category').value = 'Actualité';
+        notify('Actualité publiée sur le portail.');
+      }
       await Promise.all([loadNews(), loadDashboard()]);
     } catch (error) {
-      notify(`Échec de la publication : ${error.message}`, 'error');
+      notify(`Échec de l’enregistrement de l’actualité : ${error.message}`, 'error');
     } finally {
-      button.disabled = false;
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function loadVideos() {
+    const box = $('#videos-list');
+    const countEl = $('#videos-count');
+    if (!box) return;
+    box.innerHTML = '<p class="empty-state">Chargement de la médiathèque…</p>';
+    try {
+      const [{ data: storageFiles, error: storageError }, { data: newsVideos }, { data: presVideo }] = await Promise.all([
+        state.client.storage.from('media').list('video'),
+        state.client.from('news').select('id,title,video_url,created_at').not('video_url', 'is', null),
+        state.client.from('president_profile').select('id,name,video_url,updated_at').not('video_url', 'is', null)
+      ]);
+
+      const items = [];
+      const seenUrls = new Set();
+
+      if (!storageError && storageFiles?.length) {
+        for (const file of storageFiles) {
+          if (!file.name || file.name === '.emptyFolderPlaceholder') continue;
+          const path = `video/${file.name}`;
+          const url = state.client.storage.from('media').getPublicUrl(path).data.publicUrl;
+          seenUrls.add(url);
+          items.push({
+            name: file.name,
+            url,
+            storagePath: path,
+            size: file.metadata?.size || file.size || null,
+            createdAt: file.created_at || null,
+            source: 'Stockage Supabase (media/video)'
+          });
+        }
+      }
+
+      (newsVideos || []).forEach(n => {
+        if (n.video_url && !seenUrls.has(n.video_url)) {
+          seenUrls.add(n.video_url);
+          items.push({
+            name: n.title ? `Actualité : ${n.title}` : 'Vidéo d’actualité',
+            url: n.video_url,
+            storagePath: null,
+            size: null,
+            createdAt: n.created_at,
+            source: 'Actualités'
+          });
+        }
+      });
+
+      (presVideo || []).forEach(p => {
+        if (p.video_url && !seenUrls.has(p.video_url)) {
+          seenUrls.add(p.video_url);
+          items.push({
+            name: `Profil Présidence (${p.name || 'Président'})`,
+            url: p.video_url,
+            storagePath: null,
+            size: null,
+            createdAt: p.updated_at,
+            source: 'Profil du Président'
+          });
+        }
+      });
+
+      if (countEl) countEl.textContent = `${items.length} vidéo${items.length === 1 ? '' : 's'} répertoriée${items.length === 1 ? '' : 's'}`;
+
+      if (!items.length) {
+        box.innerHTML = '<p class="empty-state">Aucune vidéo enregistrée dans la médiathèque.</p>';
+        return;
+      }
+
+      const formatSize = octets => octets ? `${(octets / (1024 * 1024)).toFixed(1)} Mo` : '';
+
+      box.innerHTML = items.map(v => `
+        <article class="video-card">
+          <video src="${escapeHtml(v.url)}" controls preload="metadata"></video>
+          <div class="video-card-body">
+            <strong class="video-card-title" title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</strong>
+            <span class="video-card-meta">${escapeHtml(v.source)}${v.size ? ` · ${formatSize(v.size)}` : ''}${v.createdAt ? ` · ${dateFormat(v.createdAt)}` : ''}</span>
+            <div class="video-card-actions">
+              <button class="row-action copy-video-link" data-url="${escapeHtml(v.url)}" type="button">Copier l’URL</button>
+              ${v.storagePath ? `<button class="row-action delete-video" data-path="${escapeHtml(v.storagePath)}" type="button" style="color:#a83232">Supprimer</button>` : ''}
+            </div>
+          </div>
+        </article>
+      `).join('');
+    } catch (err) {
+      box.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  async function uploadVideoFromMediaForm(event) {
+    event.preventDefault();
+    const input = $('#video-upload-file');
+    const file = input?.files?.[0];
+    if (!file) {
+      notify('Sélectionnez un fichier vidéo avant de téléverser.', 'error');
+      return;
+    }
+    const button = event.submitter || $('#video-upload-form button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      await televerserMedia(file, 'video');
+      $('#video-upload-form').reset();
+      $('#video-upload-preview').innerHTML = '';
+      notify('Vidéo ajoutée à la médiathèque Supabase.');
+      await loadVideos();
+    } catch (err) {
+      notify(`Échec du téléversement : ${err.message}`, 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function deleteVideo(path) {
+    if (!window.confirm('Supprimer définitivement cette vidéo du stockage Supabase ?')) return;
+    const { error } = await state.client.storage.from('media').remove([path]);
+    if (error) {
+      notify(`Impossible de supprimer la vidéo : ${error.message}`, 'error');
+      return;
+    }
+    notify('Vidéo supprimée du stockage.');
+    await loadVideos();
+  }
+
+  async function loadBroadcastRecipients() {
+    const select = $('#broadcast-recipient');
+    if (!select) return;
+    const { data: students, error } = await state.client.from('profiles')
+      .select('id,prenom,first_name,nom,matricule')
+      .eq('role', 'student')
+      .order('nom');
+    if (error) return;
+    select.innerHTML = '<option value="all">Tous les étudiants inscrits (diffusion générale)</option>'
+      + (students || []).map(s => {
+        const nom = `${s.prenom || s.first_name || ''} ${s.nom || ''}`.trim() || 'Étudiant';
+        const mat = s.matricule ? ` (${s.matricule})` : '';
+        return `<option value="${escapeHtml(s.id)}">${escapeHtml(nom + mat)}</option>`;
+      }).join('');
+  }
+
+  async function sendBroadcastNotification(event) {
+    event.preventDefault();
+    const recipient = $('#broadcast-recipient')?.value;
+    const title = $('#broadcast-title')?.value.trim();
+    const message = $('#broadcast-message')?.value.trim();
+    if (!title || !message) {
+      notify('Veuillez renseigner un titre et un message.', 'error');
+      return;
+    }
+    const button = event.submitter || $('#broadcast-notification-form button[type="submit"]');
+    if (button) button.disabled = true;
+
+    try {
+      if (recipient === 'all') {
+        const { data: students, error: listError } = await state.client.from('profiles')
+          .select('id').eq('role', 'student');
+        if (listError) throw listError;
+        if (!students?.length) {
+          notify('Aucun compte étudiant trouvé pour la diffusion.', 'error');
+          return;
+        }
+        const confirmSend = window.confirm(`Diffuser cette notification à l’ensemble des ${students.length} étudiant(s) inscrits ?`);
+        if (!confirmSend) {
+          if (button) button.disabled = false;
+          return;
+        }
+
+        const notifs = students.map(s => ({
+          user_id: s.id,
+          title,
+          message,
+          read: false
+        }));
+
+        for (let i = 0; i < notifs.length; i += 100) {
+          const slice = notifs.slice(i, i + 100);
+          const { error: insError } = await state.client.from('notifications').insert(slice);
+          if (insError) throw insError;
+        }
+
+        notify(`Notification diffusée à ${students.length} étudiant(s).`);
+      } else {
+        const { error: insError } = await state.client.from('notifications').insert({
+          user_id: recipient,
+          title,
+          message,
+          read: false
+        });
+        if (insError) throw insError;
+        notify('Notification envoyée à l’étudiant.');
+      }
+
+      $('#broadcast-notification-form').reset();
+    } catch (err) {
+      notify(`Erreur lors de l’envoi de la notification : ${err.message}`, 'error');
+    } finally {
+      if (button) button.disabled = false;
     }
   }
 
@@ -932,9 +1430,51 @@
       return;
     }
     state.user = userData.user;
-    const email = state.user.email || 'Administrateur AEDT';
-    $('#admin-name').textContent = email;
-    $('#admin-avatar').textContent = (email[0] || 'A').toUpperCase();
+
+    // Check if super admin
+    try {
+      const { data: isSuper } = await state.client.rpc('is_super_admin');
+      state.isSuperAdmin = Boolean(isSuper);
+    } catch {
+      state.isSuperAdmin = false;
+    }
+
+    // Retrieve profile to display full name and exact role
+    const { data: prof } = await state.client.from('profiles')
+      .select('first_name,prenom,nom,role')
+      .eq('id', state.user.id)
+      .maybeSingle();
+
+    state.currentUserProfile = prof || null;
+    if (prof?.role === 'super_admin') {
+      state.isSuperAdmin = true;
+    }
+
+    const displayName = (prof ? `${prof.prenom || prof.first_name || ''} ${prof.nom || ''}`.trim() : '') || state.user.email || 'Administrateur AEDT';
+    $('#admin-name').textContent = displayName;
+    $('#admin-avatar').textContent = (displayName[0] || 'A').toUpperCase();
+
+    const roleBadgeEl = $('#admin-role-badge');
+    const roleLabelEl = $('#admin-role-label');
+    if (state.isSuperAdmin) {
+      if (roleBadgeEl) {
+        roleBadgeEl.className = 'role-badge super-admin';
+        roleBadgeEl.textContent = 'Super Admin 👑';
+      }
+      if (roleLabelEl) roleLabelEl.textContent = 'Super Administrateur AEDT';
+    } else {
+      if (roleBadgeEl) {
+        roleBadgeEl.className = 'role-badge admin';
+        roleBadgeEl.textContent = 'Admin';
+      }
+      if (roleLabelEl) roleLabelEl.textContent = 'Administration AEDT';
+    }
+
+    const btnCreateAdmin = $('#btn-open-create-admin');
+    if (btnCreateAdmin) {
+      btnCreateAdmin.hidden = !state.isSuperAdmin;
+    }
+
     $('#login-view').hidden = true;
     $('#admin-app').hidden = false;
     await loadDashboard();
@@ -1019,6 +1559,49 @@
     if (save) saveReply(save.dataset.id);
     const deleteButton = event.target.closest('.delete-gallery');
     if (deleteButton) deleteGallery(deleteButton.dataset.id);
+    const saveNoteBtn = event.target.closest('#save-request-note');
+    if (saveNoteBtn) {
+      saveRequestNote(saveNoteBtn.dataset.id);
+      return;
+    }
+    const sendCompBtn = event.target.closest('#send-complement-btn');
+    if (sendCompBtn) {
+      sendComplementRequest(sendCompBtn.dataset.id, sendCompBtn.dataset.userId, sendCompBtn.dataset.code);
+      return;
+    }
+    const editN = event.target.closest('.edit-news');
+    if (editN) {
+      editNews(editN.dataset.id);
+      return;
+    }
+    const delN = event.target.closest('.delete-news');
+    if (delN) {
+      deleteNews(delN.dataset.id);
+      return;
+    }
+    const togN = event.target.closest('.toggle-news');
+    if (togN) {
+      toggleNewsPublish(togN.dataset.id, togN.dataset.published === 'true');
+      return;
+    }
+    const copyVid = event.target.closest('.copy-video-link');
+    if (copyVid) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(copyVid.dataset.url).then(() => {
+          notify('Lien de la vidéo copié dans le presse-papier.');
+        }).catch(() => {
+          notify(`Lien vidéo : ${copyVid.dataset.url}`);
+        });
+      } else {
+        notify(`Lien vidéo : ${copyVid.dataset.url}`);
+      }
+      return;
+    }
+    const delVid = event.target.closest('.delete-video');
+    if (delVid) {
+      deleteVideo(delVid.dataset.path);
+      return;
+    }
   });
 
   document.addEventListener('change', event => {
@@ -1026,6 +1609,12 @@
       updateRequestStatus(event.target.dataset.id, event.target.value);
     } else if (event.target.matches('.document-verification')) {
       updateDocumentVerification(event.target.dataset.id, event.target.value, event.target);
+    } else if (event.target.id === 'complement-template-select' && event.target.value) {
+      const msgInput = $('#complement-message');
+      if (msgInput) msgInput.value = event.target.value;
+    } else if (event.target.id === 'student-role-filter') {
+      state.studentPage = 0;
+      loadStudents();
     }
   });
 
@@ -1055,8 +1644,13 @@
   bindPagination('document', 'documentPage', loadDocuments);
   bindPagination('message', 'messagePage', loadMessages);
   $('#news-form').addEventListener('submit', submitNews);
+  $('#news-cancel-btn')?.addEventListener('click', cancelEditNews);
   $('#news-photo').addEventListener('change', e => apercuLocal(e.target, $('#news-media-preview')));
   $('#news-video').addEventListener('change', e => apercuLocal(e.target, $('#news-media-preview')));
+  $('#video-upload-form')?.addEventListener('submit', uploadVideoFromMediaForm);
+  $('#video-upload-file')?.addEventListener('change', e => apercuLocal(e.target, $('#video-upload-preview')));
+  $('#videos-refresh')?.addEventListener('click', loadVideos);
+  $('#broadcast-notification-form')?.addEventListener('submit', sendBroadcastNotification);
   $('#president-photo').addEventListener('change', e => apercuLocal(e.target, $('#president-media-preview')));
   $('#president-video').addEventListener('change', e => apercuLocal(e.target, $('#president-media-preview')));
   $('#gallery-form').addEventListener('submit', uploadGallery);
@@ -1067,11 +1661,242 @@
   $('#student-dialog').addEventListener('click', event => {
     if (event.target === event.currentTarget) event.currentTarget.close();
   });
+  let lastCreatedCredentials = null;
+
+  function openCreateAdminDialog() {
+    if (!state.isSuperAdmin) {
+      notify('Seul un Super Administrateur peut créer des comptes d’administration.', 'error');
+      return;
+    }
+    const dialog = $('#create-admin-dialog');
+    if (!dialog) return;
+    const form = $('#create-admin-form');
+    if (form) form.reset();
+    const errorBox = $('#create-admin-error');
+    if (errorBox) {
+      errorBox.textContent = '';
+      errorBox.hidden = true;
+    }
+    const successBox = $('#create-admin-success-box');
+    if (successBox) successBox.hidden = true;
+    if (form) form.hidden = false;
+    lastCreatedCredentials = null;
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function closeCreateAdminDialog() {
+    const dialog = $('#create-admin-dialog');
+    if (dialog?.open) dialog.close();
+  }
+
+  async function createAdminAccount(event) {
+    event.preventDefault();
+    if (!state.isSuperAdmin) {
+      notify('Action réservée aux Super Administrateurs.', 'error');
+      return;
+    }
+    const submitBtn = $('#create-admin-submit-btn');
+    const errorBox = $('#create-admin-error');
+    if (errorBox) {
+      errorBox.textContent = '';
+      errorBox.hidden = true;
+    }
+
+    const firstName = $('#new-admin-first-name').value.trim();
+    const lastName = $('#new-admin-last-name').value.trim();
+    const email = $('#new-admin-email').value.trim().toLowerCase();
+    const phone = $('#new-admin-phone').value.trim();
+    const password = $('#new-admin-password').value;
+    const role = $('#new-admin-role').value;
+
+    if (!firstName || !lastName || !email || !password) {
+      if (errorBox) {
+        errorBox.textContent = 'Veuillez renseigner tous les champs obligatoires (*).';
+        errorBox.hidden = false;
+      }
+      return;
+    }
+
+    if (password.length < 8) {
+      if (errorBox) {
+        errorBox.textContent = 'Le mot de passe doit comporter au moins 8 caractères.';
+        errorBox.hidden = false;
+      }
+      return;
+    }
+
+    if (role === 'super_admin') {
+      const confirmSuper = window.confirm(`Confirmez-vous la création d'un compte SUPER ADMINISTRATEUR 👑 pour ${firstName} ${lastName} (${email}) ?`);
+      if (!confirmSuper) return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Création en cours…';
+
+    try {
+      const config = window.AEDT_CONFIG || {};
+      const url = config.SUPABASE_URL;
+      const key = config.SUPABASE_ANON_KEY;
+      if (!url || !key || !window.supabase) {
+        throw new Error('Configuration Supabase indisponible.');
+      }
+
+      // Create isolated client to avoid overwriting the current active super admin session
+      const tempClient = window.supabase.createClient(url, key, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      });
+
+      const fullName = `${firstName} ${lastName}`.trim();
+      const { data: signUpData, error: signUpError } = await tempClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            prenom: firstName,
+            nom: lastName,
+            full_name: fullName,
+            telephone: phone || null
+          }
+        }
+      });
+
+      if (signUpError) {
+        throw new Error(signUpError.message || 'Impossible de créer le compte utilisateur.');
+      }
+
+      const newUserId = signUpData?.user?.id;
+      if (!newUserId) {
+        throw new Error('Identifiant utilisateur manquant après la création du compte.');
+      }
+
+      if (signUpData.user.identities && signUpData.user.identities.length === 0) {
+        throw new Error('Un compte utilisateur existe déjà avec cette adresse e-mail.');
+      }
+
+      // Elevate role and populate profile details via authenticated super admin client
+      const { error: profileError } = await state.client.from('profiles').upsert({
+        id: newUserId,
+        first_name: firstName,
+        prenom: firstName,
+        nom: lastName,
+        telephone: phone || null,
+        role: role,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      if (profileError) {
+        throw new Error(`Le compte a été créé mais la mise à jour du rôle a échoué : ${profileError.message}`);
+      }
+
+      // Confirm email automatically so the account is active immediately
+      try {
+        await state.client.rpc('admin_confirm_user_email', { p_user_id: newUserId });
+      } catch (confirmErr) {
+        console.warn('admin_confirm_user_email non disponible :', confirmErr);
+      }
+
+      // Store credentials for copying
+      lastCreatedCredentials = {
+        roleLabel: role === 'super_admin' ? 'Super Administrateur 👑' : 'Administrateur',
+        fullName,
+        email,
+        password,
+        loginUrl: window.location.href.split('?')[0].split('#')[0]
+      };
+
+      $('#created-admin-role').textContent = lastCreatedCredentials.roleLabel;
+      $('#created-admin-name').textContent = fullName;
+      $('#created-admin-email').textContent = email;
+      $('#created-admin-pass').textContent = password;
+
+      const form = $('#create-admin-form');
+      if (form) form.hidden = true;
+      const successBox = $('#create-admin-success-box');
+      if (successBox) successBox.hidden = false;
+
+      notify(`Compte ${role === 'super_admin' ? 'Super Administrateur' : 'Administrateur'} créé avec succès !`);
+      await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
+
+    } catch (err) {
+      if (errorBox) {
+        errorBox.textContent = err.message || 'Une erreur est survenue lors de la création du compte.';
+        errorBox.hidden = false;
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Créer le compte';
+    }
+  }
+
+  function copyCreatedAdminCredentials() {
+    if (!lastCreatedCredentials) return;
+    const text = [
+      `AEDT — Accès d'administration`,
+      `Rôle : ${lastCreatedCredentials.roleLabel}`,
+      `Nom : ${lastCreatedCredentials.fullName}`,
+      `Adresse e-mail : ${lastCreatedCredentials.email}`,
+      `Mot de passe temporaire : ${lastCreatedCredentials.password}`,
+      `Lien de connexion : ${lastCreatedCredentials.loginUrl}`
+    ].join('\n');
+
+    const copyBtn = $('#btn-copy-new-admin');
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (copyBtn) {
+          const original = copyBtn.textContent;
+          copyBtn.textContent = '✓ Identifiants copiés !';
+          setTimeout(() => { copyBtn.textContent = original; }, 2500);
+        }
+      }).catch(() => fallbackCopy(text, copyBtn));
+    } else {
+      fallbackCopy(text, copyBtn);
+    }
+  }
+
+  function fallbackCopy(text, btn) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (btn) {
+        const original = btn.textContent;
+        btn.textContent = '✓ Identifiants copiés !';
+        setTimeout(() => { btn.textContent = original; }, 2500);
+      }
+    } catch {
+      notify('Veuillez copier manuellement les identifiants affichés.', 'error');
+    }
+    document.body.removeChild(ta);
+  }
+
   $('#requests-export').addEventListener('click', exportRequests);
   $('#refresh-button').addEventListener('click', loadDashboard);
   $('#activity-refresh').addEventListener('click', loadActivity);
   $('#activity-shortcut').addEventListener('click', () => setView('activity'));
-  $('#sidebar-toggle').addEventListener('click', () => $('#admin-sidebar').classList.toggle('is-open'));
+  $('#sidebar-toggle')?.addEventListener('click', toggleSidebar);
+  $('#sidebar-close')?.addEventListener('click', closeSidebar);
+  $('#sidebar-overlay')?.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeSidebar();
+  });
+  $('#btn-open-create-admin')?.addEventListener('click', openCreateAdminDialog);
+  $('#create-admin-dialog-close')?.addEventListener('click', closeCreateAdminDialog);
+  $('#create-admin-dialog-cancel')?.addEventListener('click', closeCreateAdminDialog);
+  $('#create-admin-form')?.addEventListener('submit', createAdminAccount);
+  $('#btn-copy-new-admin')?.addEventListener('click', copyCreatedAdminCredentials);
+  $('#btn-close-created-admin')?.addEventListener('click', closeCreateAdminDialog);
+  $('#create-admin-dialog')?.addEventListener('click', event => {
+    if (event.target === event.currentTarget) event.currentTarget.close();
+  });
   $('#global-search').addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       $('#request-search').value = event.currentTarget.value;

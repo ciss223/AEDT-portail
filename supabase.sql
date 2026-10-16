@@ -127,10 +127,17 @@ alter table public.notifications enable row level security;
 
 create or replace function public.is_admin()
 returns boolean language sql security definer set search_path=public
-as $$ select exists(select 1 from public.profiles where id=auth.uid() and role='admin') $$;
+as $$ select exists(select 1 from public.profiles where id=auth.uid() and role in ('admin', 'super_admin')) $$;
 
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to anon, authenticated;
+
+create or replace function public.is_super_admin()
+returns boolean language sql security definer set search_path=public
+as $$ select exists(select 1 from public.profiles where id=auth.uid() and role='super_admin') $$;
+
+revoke all on function public.is_super_admin() from public;
+grant execute on function public.is_super_admin() to anon, authenticated;
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path=public,pg_temp
@@ -219,7 +226,7 @@ create policy "profiles_self_select" on public.profiles for select to authentica
 drop policy if exists "profiles_self_write" on public.profiles;
 create policy "profiles_self_write" on public.profiles for insert to authenticated with check (id=auth.uid() and role='student');
 drop policy if exists "profiles_self_update" on public.profiles;
-create policy "profiles_self_update" on public.profiles for update to authenticated using (id=auth.uid() or public.is_admin()) with check (public.is_admin() or (id=auth.uid() and role='student'));
+create policy "profiles_self_update" on public.profiles for update to authenticated using (id=auth.uid() or public.is_admin()) with check (public.is_super_admin() or (public.is_admin() and role in ('student','admin')) or (id=auth.uid() and role='student'));
 
 drop policy if exists "notifications_self_read" on public.notifications;
 create policy "notifications_self_read" on public.notifications for select to authenticated using (user_id=auth.uid() or public.is_admin());
@@ -250,14 +257,13 @@ drop trigger if exists housing_status_notification on public.housing_requests; c
 
 
 -- AEDT V6 : accès administrateur aux messages et notification après réponse.
--- Nécessite public.profiles avec une colonne role.
 drop policy if exists "admins_read_messages" on public.messages;
 create policy "admins_read_messages" on public.messages for select to authenticated
-using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
+using (public.is_admin());
 drop policy if exists "admins_update_messages" on public.messages;
 create policy "admins_update_messages" on public.messages for update to authenticated
-using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'))
-with check (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
+using (public.is_admin())
+with check (public.is_admin());
 create or replace function public.notify_message_reply() returns trigger language plpgsql security definer set search_path=public as $$
 begin
  if new.user_id is not null and new.admin_reply is distinct from old.admin_reply and new.admin_reply is not null and length(trim(new.admin_reply))>0 then
@@ -485,3 +491,24 @@ drop trigger if exists admin_activity_document_review on public.request_document
 create trigger admin_activity_document_review after update of verification_status on public.request_documents
 for each row when (old.verification_status is distinct from new.verification_status)
 execute function public.record_document_review_activity();
+
+-- ============================================================
+-- AEDT V14 : Gestion des connexions par le Super Administrateur
+-- ============================================================
+-- Validation immédiate d'e-mail pour les comptes créés par un Super Administrateur
+create or replace function public.admin_confirm_user_email(p_user_id uuid)
+returns boolean language plpgsql security definer set search_path=public,auth,pg_temp
+as $$
+begin
+ if not public.is_super_admin() then
+  raise exception 'Action réservée aux super administrateurs.' using errcode='42501';
+ end if;
+ update auth.users set email_confirmed_at = coalesce(email_confirmed_at, now()) where id = p_user_id;
+ return true;
+end;
+$$;
+revoke all on function public.admin_confirm_user_email(uuid) from public,anon;
+grant execute on function public.admin_confirm_user_email(uuid) to authenticated;
+
+-- Pour définir le premier Super Administrateur du projet :
+-- update public.profiles set role='super_admin' where id='VOTRE_USER_ID';

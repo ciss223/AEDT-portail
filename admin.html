@@ -30,40 +30,40 @@
   </section>
 
   <div id="admin-app" class="admin-app" hidden>
-    <aside id="admin-sidebar" class="admin-sidebar">
-      <a class="admin-brand" href="index.html"><img src="assets/logo-aedt.jpeg" alt=""><span><strong>AEDT</strong><small>Administration</small></span></a>
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+    <aside id="admin-sidebar" class="admin-sidebar" aria-label="Menu d’administration">
+      <div class="admin-sidebar-header">
+        <a class="admin-brand" href="index.html"><img src="assets/logo-aedt.jpeg" alt="Logo AEDT"><span><strong>AEDT</strong><small>Administration</small></span></a>
+        <button id="sidebar-close" class="sidebar-close" type="button" aria-label="Fermer le menu">✕</button>
+      </div>
       <div class="sidebar-label">ESPACE DE TRAVAIL</div>
       <nav class="admin-nav" aria-label="Navigation administrative">
         <button class="admin-nav-link is-active" data-view="overview"><span class="nav-icon">▦</span>Vue générale</button>
         <div class="sidebar-label">GESTION UNIVERSITAIRE</div>
         <button class="admin-nav-link" data-view="requests"><span class="nav-icon">⌂</span>Demandes de logement<span id="nav-request-count" class="nav-count">—</span></button>
-        <button class="admin-nav-link" data-view="students"><span class="nav-icon">♙</span>Étudiants</button>
+        <button class="admin-nav-link" data-view="students"><span class="nav-icon">♙</span>Étudiants & Rôles</button>
         <button class="admin-nav-link" data-view="documents"><span class="nav-icon">▤</span>Documents justificatifs</button>
         <div class="sidebar-label">COMMUNICATION</div>
         <button class="admin-nav-link" data-view="messages"><span class="nav-icon">✉</span>Messagerie<span id="nav-message-count" class="nav-count">—</span></button>
         <button class="admin-nav-link" data-view="notifications"><span class="nav-icon">♧</span>Notifications</button>
         <button class="admin-nav-link" data-view="news"><span class="nav-icon">▧</span>Actualités</button>
         <div class="sidebar-label">CONTENUS</div>
+        <button class="admin-nav-link" data-view="videos"><span class="nav-icon">▶</span>Vidéos & Médias</button>
         <button class="admin-nav-link" data-view="gallery"><span class="nav-icon">▧</span>Galerie photos</button>
         <button class="admin-nav-link" data-view="president"><span class="nav-icon">♔</span>Profil du Président</button>
         <button class="admin-nav-link" data-view="activity"><span class="nav-icon">◷</span>Journal des activités</button>
-        <div class="sidebar-label">À RÉALISER</div>
-        <span class="nav-upcoming">Vidéos <small>À venir</small></span>
-        <span class="nav-upcoming">Gestion des rôles <small>Admin unique</small></span>
-        <span class="nav-upcoming">Édition des profils étudiants <small>À venir</small></span>
-        <span class="nav-upcoming">Demande de complément <small>À venir</small></span>
       </nav>
       <div class="sidebar-footer"><span class="online-dot"></span>Services connectés<div>Supabase · session sécurisée</div></div>
     </aside>
 
     <div class="admin-workspace">
       <header class="admin-topbar">
-        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Ouvrir le menu">☰</button>
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="admin-sidebar">☰</button>
         <div class="topbar-context"><span>Portail institutionnel</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb">Vue générale</strong></div>
         <div class="topbar-actions">
           <label class="global-search"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="Rechercher un dossier…" aria-label="Recherche globale"></label>
           <button id="activity-shortcut" class="icon-button" type="button" title="Journal des activités" aria-label="Ouvrir le journal des activités">◷</button>
-          <div class="admin-profile"><span id="admin-avatar" class="avatar">A</span><span><strong id="admin-name">Administrateur</strong><small>Administration AEDT</small></span></div>
+          <div class="admin-profile"><span id="admin-avatar" class="avatar">A</span><span><strong id="admin-name">Administrateur</strong><small id="admin-role-label">Administration AEDT</small></span><span id="admin-role-badge" class="role-badge admin">Admin</span></div>
           <button id="logout-button" class="logout-button" type="button">Déconnexion</button>
         </div>
       </header>
@@ -91,7 +91,7 @@
           <div class="dashboard-grid">
             <article class="admin-panel"><div class="panel-heading"><div><h2>Messages récents</h2><p>Échanges des étudiants avec l’AEDT</p></div><button class="text-action" data-go="messages" type="button">Ouvrir la messagerie →</button></div><div id="recent-messages" class="recent-list"></div></article>
             <article class="admin-panel"><div class="panel-heading"><div><h2>Activité administrative</h2><p>Dernières opérations enregistrées</p></div><button class="text-action" data-go="activity" type="button">Voir le journal →</button></div><div id="recent-activity" class="recent-list"></div></article>
-            <article class="admin-panel"><div class="panel-heading"><div><h2>Contenu institutionnel</h2><p>Accès rapide à l’édition des contenus</p></div></div><div class="quick-links"><button data-go="news" type="button">Actualités <span>›</span></button><button data-go="gallery" type="button">Galerie photos <span>›</span></button><button data-go="president" type="button">Profil du Président <span>›</span></button><button data-go="activity" type="button">Journal des activités <span>›</span></button></div></article>
+            <article class="admin-panel"><div class="panel-heading"><div><h2>Contenu institutionnel</h2><p>Accès rapide à l’édition des contenus</p></div></div><div class="quick-links"><button data-go="news" type="button">Actualités <span>›</span></button><button data-go="videos" type="button">Vidéos & Médias <span>›</span></button><button data-go="gallery" type="button">Galerie photos <span>›</span></button><button data-go="president" type="button">Profil du Président <span>›</span></button><button data-go="activity" type="button">Journal des activités <span>›</span></button></div></article>
           </div>
         </section>
 
@@ -106,8 +106,8 @@
         </section>
 
         <section id="view-students" class="admin-view" hidden>
-          <div class="page-heading"><div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Étudiants</h1><p>Profils présents dans la base AEDT et informations déclarées sur leurs demandes.</p></div></div>
-          <article class="admin-panel"><div class="table-toolbar"><label class="table-search">⌕<input id="student-search" type="search" placeholder="Nom, établissement, filière…"></label><select id="student-sort"><option value="newest">Inscriptions récentes</option><option value="name">Nom A–Z</option></select></div><div id="student-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Étudiant</th><th>Établissement</th><th>Filière</th><th>Niveau</th><th>Inscrit le</th><th>Actions</th></tr></thead><tbody id="student-rows"></tbody></table></div><div id="student-cards" class="mobile-record-list"></div><div class="pagination"><button id="student-prev" class="admin-secondary" type="button">← Précédent</button><span id="student-page">Page 1</span><button id="student-next" class="admin-secondary" type="button">Suivant →</button></div><p class="data-note">Les e-mails d’authentification ne sont pas exposés dans la base publique du projet. Cette vue utilise uniquement les champs du profil étudiant et des demandes.</p></article>
+          <div class="page-heading"><div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Étudiants & Rôles</h1><p>Profils enregistrés, gestion des autorisations et création de comptes administratifs.</p></div><button id="btn-open-create-admin" class="admin-primary" type="button" hidden>+ Créer un compte administrateur</button></div>
+          <article class="admin-panel"><div class="table-toolbar"><label class="table-search">⌕<input id="student-search" type="search" placeholder="Nom, établissement, filière…"></label><select id="student-role-filter"><option value="">Tous les comptes</option><option value="student">Étudiants uniquement</option><option value="admin">Administrateurs uniquement</option><option value="super_admin">Super Administrateurs 👑</option></select><select id="student-sort"><option value="newest">Inscriptions récentes</option><option value="name">Nom A–Z</option></select></div><div id="student-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Utilisateur</th><th>Rôle</th><th>Établissement</th><th>Filière</th><th>Niveau</th><th>Inscrit le</th><th>Actions</th></tr></thead><tbody id="student-rows"></tbody></table></div><div id="student-cards" class="mobile-record-list"></div><div class="pagination"><button id="student-prev" class="admin-secondary" type="button">← Précédent</button><span id="student-page">Page 1</span><button id="student-next" class="admin-secondary" type="button">Suivant →</button></div><p class="data-note">Les rôles disponibles sont <strong>Étudiant</strong>, <strong>Administrateur</strong> et <strong>Super Administrateur</strong>. Les créations et modifications de rôle sont journalisées.</p></article>
         </section>
 
         <section id="view-documents" class="admin-view" hidden>
@@ -121,13 +121,107 @@
         </section>
 
         <section id="view-notifications" class="admin-view" hidden>
-          <div class="page-heading"><div><span class="admin-kicker">COMMUNICATION</span><h1>Notifications</h1><p>Les notifications automatiques sont envoyées lors d’une réponse ou d’un changement de statut.</p></div></div>
-          <article class="admin-panel"><div class="notice-card"><strong>Automatisations actives dans la base</strong><p>Changement du statut d’un dossier et réponse à un message étudiant. L’administration ne peut pas consulter le contenu privé des notifications des étudiants depuis cette interface.</p></div><div class="quick-links"><button data-go="requests" type="button">Gérer les statuts des demandes <span>›</span></button><button data-go="messages" type="button">Répondre aux étudiants <span>›</span></button></div></article>
+          <div class="page-heading">
+            <div>
+              <span class="admin-kicker">COMMUNICATION</span>
+              <h1>Notifications</h1>
+              <p>Envoyez des alertes aux étudiants et suivez les automatisations du portail.</p>
+            </div>
+          </div>
+          <div class="content-layout">
+            <article class="admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Diffuser une notification</h2>
+                  <p>Alerte envoyée directement dans l’espace étudiant des bénéficiaires.</p>
+                </div>
+              </div>
+              <form id="broadcast-notification-form" class="admin-form broadcast-form">
+                <label for="broadcast-recipient">Destinataires
+                  <select id="broadcast-recipient">
+                    <option value="all">Tous les étudiants inscrits (diffusion générale)</option>
+                  </select>
+                </label>
+                <label for="broadcast-title">Titre de l’alerte<input id="broadcast-title" required maxlength="120" placeholder="Ex. Attribution des logements — Commission AEDT"></label>
+                <label for="broadcast-message">Message<textarea id="broadcast-message" rows="4" required maxlength="500" placeholder="Votre message pour les étudiants…"></textarea></label>
+                <button class="admin-primary" type="submit">Envoyer la notification</button>
+              </form>
+            </article>
+            <article class="admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Automatisations actives</h2>
+                  <p>Déclencheurs gérés par Supabase</p>
+                </div>
+              </div>
+              <div class="notice-card">
+                <strong>Notification de statut de logement</strong>
+                <p>Envoyée automatiquement à l'étudiant dès que l’administration modifie la décision de son dossier (Acceptée, Refusée, En étude).</p>
+              </div>
+              <div class="notice-card" style="margin-top:12px">
+                <strong>Notification de réponse messagerie</strong>
+                <p>Déclenchée instantanément dès qu'une réponse administrative est enregistrée pour un message étudiant.</p>
+              </div>
+              <div class="notice-card" style="margin-top:12px">
+                <strong>Demande de complément de dossier</strong>
+                <p>Envoyée directement au compte étudiant lors d'une demande de pièces complémentaires depuis la fiche du dossier.</p>
+              </div>
+              <div class="quick-links" style="margin-top:16px">
+                <button data-go="requests" type="button">Gérer les demandes de logement <span>›</span></button>
+                <button data-go="messages" type="button">Consulter les messages reçus <span>›</span></button>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section id="view-news" class="admin-view" hidden>
-          <div class="page-heading"><div><span class="admin-kicker">COMMUNICATION</span><h1>Actualités</h1><p>Publiez des informations visibles sur l’accueil du portail.</p></div></div>
-          <div class="content-layout"><article class="admin-panel"><div class="panel-heading"><div><h2>Publier une actualité</h2><p>Le contenu publié apparaît dans la section Actualités.</p></div></div><form id="news-form" class="admin-form"><label>Titre<input id="news-title" required maxlength="180"></label><div class="form-row"><label>Catégorie<input id="news-category" value="Actualité" maxlength="80"></label><label>Photo de l’actualité<input id="news-photo" type="file" accept="image/*"></label></div><div class="form-row"><label>Vidéo de l’actualité <span class="optional">optionnel</span><input id="news-video" type="file" accept="video/*"></label><label>Légende de la vidéo <span class="optional">optionnel</span><input id="news-video-caption" maxlength="180"></label></div><label>Extrait<textarea id="news-excerpt" rows="2" maxlength="400"></textarea></label><label>Contenu<textarea id="news-content" rows="5"></textarea></label><div id="news-media-preview" class="media-preview"></div><button class="admin-primary" type="submit">Publier l’actualité</button></form></article><article class="admin-panel"><div class="panel-heading"><div><h2>Publications</h2><p>Actualités enregistrées dans la base</p></div></div><div id="news-list" class="content-list"></div></article></div>
+          <div class="page-heading"><div><span class="admin-kicker">COMMUNICATION</span><h1>Actualités</h1><p>Publiez et gérez les informations affichées sur l’accueil du portail.</p></div></div>
+          <div class="content-layout"><article class="admin-panel"><div class="panel-heading"><div><h2 id="news-form-title">Publier une actualité</h2><p id="news-form-sub">Le contenu publié apparaît dans la section Actualités.</p></div></div><form id="news-form" class="admin-form"><input id="news-edit-id" type="hidden"><label>Titre<input id="news-title" required maxlength="180"></label><div class="form-row"><label>Catégorie<input id="news-category" value="Actualité" maxlength="80"></label><label>Photo de l’actualité<input id="news-photo" type="file" accept="image/*"></label></div><div class="form-row"><label>Vidéo de l’actualité <span class="optional">optionnel</span><input id="news-video" type="file" accept="video/*"></label><label>Légende de la vidéo <span class="optional">optionnel</span><input id="news-video-caption" maxlength="180"></label></div><label>Extrait<textarea id="news-excerpt" rows="2" maxlength="400"></textarea></label><label>Contenu<textarea id="news-content" rows="5"></textarea></label><div id="news-media-preview" class="media-preview"></div><div class="detail-actions"><button id="news-submit-btn" class="admin-primary" type="submit">Publier l’actualité</button><button id="news-cancel-btn" class="admin-secondary" type="button" hidden>Annuler la modification</button></div></form></article><article class="admin-panel"><div class="panel-heading"><div><h2>Publications</h2><p>Actualités enregistrées dans la base</p></div></div><div id="news-list" class="content-list"></div></article></div>
+        </section>
+
+        <section id="view-videos" class="admin-view" hidden>
+          <div class="page-heading">
+            <div>
+              <span class="admin-kicker">CONTENUS MULTIMÉDIAS</span>
+              <h1>Vidéos & Médias</h1>
+              <p>Médiathèque des vidéos hébergées dans Supabase (actualités, mot du Président, bannières).</p>
+            </div>
+            <button id="videos-refresh" class="admin-secondary" type="button">↻ Actualiser</button>
+          </div>
+          <div class="content-layout">
+            <article class="admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Téléverser une vidéo</h2>
+                  <p>Hébergée dans le bucket public « media » (MP4, WebM, jusqu’à 50 Mo)</p>
+                </div>
+              </div>
+              <form id="video-upload-form" class="admin-form">
+                <label for="video-upload-file">Fichier vidéo
+                  <input id="video-upload-file" type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime" required>
+                </label>
+                <div id="video-upload-preview" class="media-preview"></div>
+                <button class="admin-primary" type="submit">Téléverser dans la médiathèque</button>
+              </form>
+              <div class="hero-video-info">
+                <strong>🎬 Vidéo de fond de la page d’accueil</strong>
+                <p class="data-note" style="margin:6px 0 0">
+                  La bannière d’accueil utilise le fichier local <code>assets/hero-video.mp4</code>.
+                  Format recommandé : MP4 (H.264), 1080p, 8 à 20s en boucle, poids &lt; 8 Mo.
+                  Consultez <code>assets/LIRE-VIDEO.md</code> pour les détails d'intégration.
+                </p>
+              </div>
+            </article>
+            <article class="admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Vidéos enregistrées</h2>
+                  <p id="videos-count">Chargement de la médiathèque…</p>
+                </div>
+              </div>
+              <div id="videos-list" class="video-grid"></div>
+            </article>
+          </div>
         </section>
 
         <section id="view-gallery" class="admin-view" hidden>
@@ -152,7 +246,7 @@
   <dialog id="student-dialog" class="request-dialog student-dialog" aria-labelledby="student-dialog-title">
     <form id="student-edit-form" class="admin-form">
       <button id="student-dialog-close" class="dialog-close" type="button" aria-label="Fermer">×</button>
-      <div class="detail-heading"><span class="admin-kicker">PROFIL ÉTUDIANT</span><h2 id="student-dialog-title">Modifier les informations</h2><p>Seules les informations déjà présentes dans le profil peuvent être modifiées.</p></div>
+      <div class="detail-heading"><span class="admin-kicker">COMPTE & PROFIL</span><h2 id="student-dialog-title">Modifier les informations et autorisations</h2><p>Mettez à jour les informations du profil ou attribuez le rôle administrateur.</p></div>
       <input id="student-edit-id" type="hidden">
       <div class="form-row">
         <label for="student-edit-first-name">Prénom<input id="student-edit-first-name" maxlength="160"></label>
@@ -160,15 +254,83 @@
       </div>
       <div class="form-row">
         <label for="student-edit-phone">Téléphone<input id="student-edit-phone" type="tel" maxlength="40"></label>
-        <label for="student-edit-matricule">Identifiant étudiant<input id="student-edit-matricule" maxlength="120"></label>
+        <label for="student-edit-matricule">Identifiant / Matricule<input id="student-edit-matricule" maxlength="120"></label>
       </div>
       <label for="student-edit-school">Établissement<input id="student-edit-school" maxlength="200"></label>
       <div class="form-row">
         <label for="student-edit-program">Filière<input id="student-edit-program" maxlength="200"></label>
         <label for="student-edit-level">Niveau<input id="student-edit-level" maxlength="120"></label>
       </div>
-      <div class="detail-actions"><button class="admin-secondary" id="student-dialog-cancel" type="button">Annuler</button><button class="admin-primary" type="submit">Enregistrer le profil</button></div>
+      <div class="form-row" style="align-items:end">
+        <label for="student-edit-role">Rôle du compte
+          <select id="student-edit-role">
+            <option value="student">Étudiant (accès espace étudiant)</option>
+            <option value="admin">Administrateur (accès gestion du portail)</option>
+            <option value="super_admin" id="opt-role-super-admin">Super Administrateur 👑 (accès total & création de comptes)</option>
+          </select>
+        </label>
+        <div>
+          <small id="student-edit-role-note" style="color:#7f8e9e;font-size:0.75rem"></small>
+        </div>
+      </div>
+      <div id="student-edit-role-warning" class="role-warning" hidden>
+        ⚠️ <strong>Attention :</strong> le rôle <em>Administrateur</em> accorde un accès complet à l’ensemble des dossiers privés, justificatifs, messageries, actualités et journal des activités du portail.
+      </div>
+      <div class="detail-actions" style="margin-top:20px"><button class="admin-secondary" id="student-dialog-cancel" type="button">Annuler</button><button class="admin-primary" type="submit">Enregistrer les modifications</button></div>
     </form>
+  </dialog>
+
+  <dialog id="create-admin-dialog" class="request-dialog student-dialog" aria-labelledby="create-admin-dialog-title">
+    <button id="create-admin-dialog-close" class="dialog-close" type="button" aria-label="Fermer">×</button>
+    <form id="create-admin-form" class="admin-form">
+      <div class="detail-heading">
+        <span class="admin-kicker">GESTION DES ACCÈS SUPÉRIEURS</span>
+        <h2 id="create-admin-dialog-title">Créer un compte d’administration</h2>
+        <p>En tant que Super Administrateur, créez un compte d’accès administratif avec activation immédiate.</p>
+      </div>
+      <div class="form-row">
+        <label for="new-admin-first-name">Prénom *<input id="new-admin-first-name" required maxlength="160" placeholder="ex. Jean"></label>
+        <label for="new-admin-last-name">Nom *<input id="new-admin-last-name" required maxlength="160" placeholder="ex. Dupont"></label>
+      </div>
+      <div class="form-row">
+        <label for="new-admin-email">Adresse e-mail (identifiant) *<input id="new-admin-email" type="email" required maxlength="255" placeholder="admin@aedt.org"></label>
+        <label for="new-admin-phone">Téléphone<input id="new-admin-phone" type="tel" maxlength="40" placeholder="+33 6 12 34 56 78"></label>
+      </div>
+      <div class="form-row">
+        <label for="new-admin-password">Mot de passe temporaire *<input id="new-admin-password" type="text" required minlength="8" maxlength="120" placeholder="8 caractères minimum"></label>
+        <label for="new-admin-role">Rôle accordé *
+          <select id="new-admin-role" required>
+            <option value="super_admin">Super Administrateur 👑 (accès total & création de comptes)</option>
+            <option value="admin">Administrateur standard (gestion opérationnelle)</option>
+          </select>
+        </label>
+      </div>
+      <div class="role-warning">
+        👑 <strong>Privilèges :</strong> Seul un <em>Super Administrateur</em> peut créer ou promouvoir d'autres comptes Super Administrateurs ou modifier les autorisations critiques.
+      </div>
+      <div id="create-admin-error" class="app-message error" style="margin-top:14px" hidden></div>
+      <div class="detail-actions" style="margin-top:20px">
+        <button class="admin-secondary" id="create-admin-dialog-cancel" type="button">Annuler</button>
+        <button class="admin-primary" id="create-admin-submit-btn" type="submit">Créer le compte</button>
+      </div>
+    </form>
+    <div id="create-admin-success-box" hidden>
+      <div class="detail-heading">
+        <span class="admin-kicker" style="color:#0f766e">CRÉATION RÉUSSIE</span>
+        <h2>Compte administrateur actif</h2>
+        <p>Le compte a été créé et activé sans interruption de votre session active. Vous pouvez transmettre ces identifiants à l’administrateur.</p>
+      </div>
+      <div class="credentials-box">
+        <p><strong>Privilège :</strong> <span id="created-admin-role"></span></p>
+        <p><strong>Nom complet :</strong> <span id="created-admin-name"></span></p>
+        <p><strong>Adresse e-mail :</strong> <code id="created-admin-email"></code></p>
+        <p><strong>Mot de passe :</strong> <code id="created-admin-pass"></code></p>
+      </div>
+      <div class="detail-actions" style="margin-top:20px">
+        <button class="admin-secondary" id="btn-copy-new-admin" type="button">📋 Copier les identifiants</button>
+        <button class="admin-primary" id="btn-close-created-admin" type="button">Fermer</button>
+      </div>
+    </div>
   </dialog>
 </body>
 </html>

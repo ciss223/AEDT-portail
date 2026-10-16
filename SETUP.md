@@ -104,5 +104,28 @@ Exécuter le `supabase.sql` complet dans Supabase après remplacement des fichie
 - Les mises à jour de statut des documents sont protégées par RLS et ajoutées au journal administratif. Les opérations sur la galerie sont également enregistrées par le journal V11.
 - Les profils étudiants peuvent être modifiés depuis la liste pour les champs déjà présents (nom, téléphone, matricule, établissement, filière et niveau). L’e-mail d’authentification et le rôle ne sont ni exposés ni modifiables par cette interface; les changements de profil sont journalisés.
 - Le tableau de bord affiche le nombre réel de pièces restant à vérifier. Le graphique mensuel distingue les dossiers reçus des changements de statut journalisés; les changements antérieurs à l’installation du journal ne sont pas reconstitués.
-- Après déploiement du site, réexécutez le fichier `supabase.sql` complet dans SQL Editor. Les nouvelles colonnes et règles sont ajoutées sans supprimer les documents existants.
 - La vérification reste une information interne : l’envoi d’une demande de complément dédiée et les rôles différenciés ne sont pas encore implémentés.
+
+## V13 — Évolution majeure de l’administration AEDT
+- **Demande de complément de dossier** : depuis le détail de chaque dossier de logement, l'administration peut envoyer une demande de pièces complémentaires (avec motifs types préremplis ou message libre). Si l'étudiant dispose d'un compte, une notification instantanée lui est transmise et la remarque apparaît directement sur sa demande dans l'espace étudiant. Le statut passe automatiquement en « En étude ».
+- **Notes administratives éditables** : chaque dossier dispose d'un champ de note interne modifiable et enregistrable à tout moment par l'administrateur.
+- **Gestion des rôles et autorisations** : la vue étudiants est enrichie avec un filtre par rôle (Étudiants, Administrateurs) et la possibilité d'attribuer ou retirer les droits `admin` à un compte avec confirmation de sécurité et protection contre l'auto-rétrogradation.
+- **Vidéos & Médiathèque** : nouvelle section dédiée permettant d'explorer toutes les vidéos hébergées dans Supabase (`media/video/`, actualités, mot du Président), de téléverser de nouveaux clips, de les prévisualiser directement, de copier leur lien public et de les supprimer.
+- **Gestion complète des actualités** : ajout de la modification directe des articles publiés, de la suppression avec confirmation et du basculement en un clic entre état « Publiée » et « Brouillon ».
+- **Diffusion de notifications** : module permettant d'envoyer une notification à l'ensemble des étudiants inscrits (diffusion générale) ou à un étudiant spécifique.
+
+## V14 — Super Administrateur & Affichage Téléphone Optimisé
+- **Rôle Super Administrateur (`super_admin`)** : Bénéficie des droits d'administration totaux avec privilège exclusif de créer d'autres administrateurs, promouvoir des comptes au rang de Super Administrateur ou gérer les autorisations avancées.
+- **Création de connexions directes par le Super Administrateur** : Un bouton dédié « + Créer un compte administrateur » dans la vue Étudiants & Rôles permet à un Super Administrateur de créer un compte (Super Administrateur ou Administrateur standard) avec prénom, nom, e-mail, téléphone et mot de passe temporaire sans jamais déconnecter sa session en cours.
+- **Confirmation immédiate** : La fonction Supabase `public.admin_confirm_user_email(p_user_id)` confirme automatiquement l'adresse e-mail pour que le nouvel administrateur puisse se connecter immédiatement sans dépendre d'un lien d'activation par e-mail.
+- **Sécurisation RLS** : Les politiques RLS (`profiles_self_update`) empêchent formellement tout administrateur standard d'attribuer le rôle `super_admin` à un compte ou de modifier un profil Super Administrateur.
+- **Affichage téléphone et menu mobile optimisés** :
+  - **Menu de l'administration** : Le bouton `☰` ouvre un panneau latéral fluide avec fond assombri (`#sidebar-overlay`), bouton de fermeture explicite (`✕`) dans l'en-tête, fermeture automatique au clic sur l'arrière-plan ou à la touche Échap, et fermeture au choix d'une rubrique.
+  - **Bouton Menu du site public** : La navigation mobile bascule dynamiquement entre l'icône hamburger `☰ Menu` et `✕ Fermer`, et se referme au clic à l'extérieur.
+  - **Affichage sur téléphone** : La barre supérieure adapte son contenu pour éviter tout débordement horizontal, les filtres et recherches deviennent des blocs tactiles pleine largeur, et les tableaux se transforment en fiches mobiles lisibles et compactes.
+- **Définition du premier Super Administrateur** :
+  Après avoir exécuté `supabase.sql` dans le SQL Editor de Supabase :
+  ```sql
+  update public.profiles set role = 'super_admin' where id = 'UUID_DE_VOTRE_COMPTE';
+  ```
+
