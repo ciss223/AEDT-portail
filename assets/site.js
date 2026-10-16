@@ -76,4 +76,67 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 320);
     }, 2800);
   }
+
+  // --- Animation fluide des compteurs statistiques ---
+  const statNumbers = document.querySelectorAll('.stat b[data-target]');
+  if (statNumbers.length && 'IntersectionObserver' in window) {
+    const statObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = parseInt(el.getAttribute('data-target'), 10);
+          if (!isNaN(target)) {
+            const duration = 1800;
+            const startTime = performance.now();
+            function updateCounter(currentTime) {
+              const elapsed = currentTime - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              // Ease-out expo
+              const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+              const current = Math.floor(ease * target);
+              el.textContent = current + '+';
+              if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+              } else {
+                el.textContent = target + '+';
+              }
+            }
+            requestAnimationFrame(updateCounter);
+          }
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.25 });
+
+    statNumbers.forEach(num => statObserver.observe(num));
+  }
+
+  // --- Animation d'apparition au défilement (Scroll Reveal) ---
+  const reveals = document.querySelectorAll('.scroll-reveal');
+  if (reveals.length) {
+    if ('IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+      reveals.forEach(el => revealObserver.observe(el));
+    } else {
+      reveals.forEach(el => el.classList.add('revealed'));
+    }
+  }
+
+  // --- Effet Specular Flashlight Glass au survol ---
+  document.querySelectorAll('.quick-card, .president, .stat, .step, .news-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    });
+  });
 });

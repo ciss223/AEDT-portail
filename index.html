@@ -6,12 +6,16 @@
 <meta name="description" content="AEDT — Amicale des Étudiants de Diass a Thiès. Logement, actualités, vie associative et accompagnement étudiant.">
 <title>AEDT — Amicale des Étudiants de Diass a Thiès</title>
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="assets/home.css">
-<script src="assets/site.js?v=2" defer></script>
+<link rel="stylesheet" href="assets/home.css?v=2">
+<script src="assets/site.js?v=3" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script><link rel="stylesheet" href="assets/whatsapp.css"><script src="assets/whatsapp.js" defer></script>
 </head>
 <body>
+<div class="ambient-orb orb-1" aria-hidden="true"></div>
+<div class="ambient-orb orb-2" aria-hidden="true"></div>
+<div class="ambient-orb orb-3" aria-hidden="true"></div>
+<div class="ambient-orb orb-4" aria-hidden="true"></div>
 <header class="site-header"><div class="wrap nav">
 <a class="brand" href="index.html"><img src="assets/logo-aedt.jpeg" alt="Logo AEDT" onerror="this.style.display='none'"><span>AEDT<small>Amicale des Étudiants de Diass a Thiès</small></span></a>
 <nav class="nav-links" aria-label="Navigation principale">
@@ -58,18 +62,18 @@
 </div>
 </div>
 <section class="stats"><div class="wrap"><div class="stats-grid">
-<div class="stat"><b data-target="500">500+</b><span>Étudiants accompagnés</span></div>
-<div class="stat"><b data-target="200">200+</b><span>Logements proposés</span></div>
-<div class="stat"><b data-target="50">50+</b><span>Activités par an</span></div>
-<div class="stat"><b data-target="15">15+</b><span>Années d’engagement</span></div>
+<div class="stat scroll-reveal stagger-1"><b data-target="500">0+</b><span>Étudiants accompagnés</span></div>
+<div class="stat scroll-reveal stagger-2"><b data-target="200">0+</b><span>Logements proposés</span></div>
+<div class="stat scroll-reveal stagger-3"><b data-target="50">0+</b><span>Activités par an</span></div>
+<div class="stat scroll-reveal stagger-4"><b data-target="15">0+</b><span>Années d’engagement</span></div>
 </div></div></section>
 
 <section class="section section-alt" id="mot-president">
-<div class="wrap president" id="president"><div class="president-art" id="presidentArt" aria-hidden="true">🎓</div><div><div class="eyebrow" style="color:var(--blue)">Mot du Président</div><h2>Unis pour mieux réussir</h2><blockquote id="presidentQuote">« Ensemble, nous pouvons construire un cadre d’entraide, de solidarité et de réussite pour tous les étudiants. »</blockquote><p id="presidentName"><strong>La Présidence de l’AEDT</strong></p><a class="btn btn-blue" href="etudiant.html">Rejoindre l’espace étudiant</a><div class="president-video" id="presidentVideo"></div></div></div>
+<div class="wrap president scroll-reveal" id="president"><div class="president-art" id="presidentArt" aria-hidden="true">🎓</div><div><div class="eyebrow" style="color:var(--blue)">Mot du Président</div><h2>Unis pour mieux réussir</h2><blockquote id="presidentQuote">« Ensemble, nous pouvons construire un cadre d’entraide, de solidarité et de réussite pour tous les étudiants. »</blockquote><p id="presidentName"><strong>La Présidence de l’AEDT</strong></p><a class="btn btn-blue" href="etudiant.html">Rejoindre l’espace étudiant</a><div class="president-video" id="presidentVideo"></div></div></div>
 </section>
 
 <section class="section wrap" id="amicale">
-<div class="section-head">
+<div class="section-head scroll-reveal">
 <div>
 <div class="eyebrow">L’Amicale</div>
 <h2>Des services pensés pour les étudiants</h2>
@@ -78,16 +82,16 @@
 <a href="services.html">Tous les services →</a>
 </div>
 <div class="quick">
-<article class="quick-card"><div class="icon">🏠</div><h3>Logement</h3><p>Déposez votre demande de logement et suivez son état en ligne, simplement.</p><a href="logement.html">Accéder au service →</a></article>
-<article class="quick-card"><div class="icon">📰</div><h3>Actualités</h3><p>Retrouvez les dernières informations et annonces de l’AEDT.</p><a href="actualites.html">Voir les actualités →</a></article>
-<article class="quick-card"><div class="icon">📸</div><h3>Galerie</h3><p>Revivez les activités, rencontres et moments forts de l’Amicale.</p><a href="#galerie">Voir la galerie →</a></article>
-<article class="quick-card"><div class="icon">🤝</div><h3>Solidarité</h3><p>Une communauté engagée pour accompagner chaque étudiant.</p><a href="#president">En savoir plus →</a></article>
+<article class="quick-card scroll-reveal stagger-1"><div class="icon">🏠</div><h3>Logement</h3><p>Déposez votre demande de logement et suivez son état en ligne, simplement.</p><a href="logement.html">Accéder au service →</a></article>
+<article class="quick-card scroll-reveal stagger-2"><div class="icon">📰</div><h3>Actualités</h3><p>Retrouvez les dernières informations et annonces de l’AEDT.</p><a href="actualites.html">Voir les actualités →</a></article>
+<article class="quick-card scroll-reveal stagger-3"><div class="icon">📸</div><h3>Galerie</h3><p>Revivez les activités, rencontres et moments forts de l’Amicale.</p><a href="#galerie">Voir la galerie →</a></article>
+<article class="quick-card scroll-reveal stagger-4"><div class="icon">🤝</div><h3>Solidarité</h3><p>Une communauté engagée pour accompagner chaque étudiant.</p><a href="#president">En savoir plus →</a></article>
 </div>
 </section>
 
 <section class="section section-alt" id="process">
 <div class="wrap">
-<div class="section-head">
+<div class="section-head scroll-reveal">
 <div>
 <div class="eyebrow">Comment ça marche</div>
 <h2>Votre logement en 3 étapes simples</h2>
@@ -96,24 +100,24 @@
 <a href="logement.html">Faire une demande →</a>
 </div>
 <div class="steps">
-<article class="step"><div class="step-num">1</div><h3>Créez votre compte</h3><p>Inscrivez-vous sur l’espace étudiant en quelques minutes avec vos informations.</p></article>
-<article class="step"><div class="step-num">2</div><h3>Déposez votre demande</h3><p>Remplissez le formulaire de logement et joignez les pièces demandées.</p></article>
-<article class="step"><div class="step-num">3</div><h3>Suivez votre dossier</h3><p>Consultez l’état de votre demande à tout moment depuis votre espace.</p></article>
+<article class="step scroll-reveal stagger-1"><div class="step-num">1</div><h3>Créez votre compte</h3><p>Inscrivez-vous sur l’espace étudiant en quelques minutes avec vos informations.</p></article>
+<article class="step scroll-reveal stagger-2"><div class="step-num">2</div><h3>Déposez votre demande</h3><p>Remplissez le formulaire de logement et joignez les pièces demandées.</p></article>
+<article class="step scroll-reveal stagger-3"><div class="step-num">3</div><h3>Suivez votre dossier</h3><p>Consultez l’état de votre demande à tout moment depuis votre espace.</p></article>
 </div>
 </div>
 </section>
 
-<section class="section wrap" id="actualites"><div class="section-head"><div><div class="eyebrow">Actualités</div><h2>Dernières actualités</h2><p>Restez informés de la vie de votre Amicale.</p></div><a href="actualites.html">Toutes les actualités →</a></div>
+<section class="section wrap" id="actualites"><div class="section-head scroll-reveal"><div><div class="eyebrow">Actualités</div><h2>Dernières actualités</h2><p>Restez informés de la vie de votre Amicale.</p></div><a href="actualites.html">Toutes les actualités →</a></div>
 <div class="news-grid" id="newsGrid">
-<article class="news-card"><div class="news-img">🎓</div><div class="body"><span class="tag">Vie étudiante</span><h3>Bienvenue sur le portail AEDT</h3><p>Retrouvez les services, informations et annonces de votre Amicale sur un seul espace.</p></div></article>
-<article class="news-card"><div class="news-img">🤝</div><div class="body"><span class="tag">Événement</span><h3>La force de notre communauté</h3><p>Ensemble, favorisons l’entraide, l’intégration et la réussite des étudiants.</p></div></article>
-<article class="news-card"><div class="news-img">🏠</div><div class="body"><span class="tag">Logement</span><h3>Le service logement</h3><p>Consultez les informations et les étapes pour déposer votre demande.</p></div></article>
+<article class="news-card scroll-reveal stagger-1"><div class="news-img">🎓</div><div class="body"><span class="tag">Vie étudiante</span><h3>Bienvenue sur le portail AEDT</h3><p>Retrouvez les services, informations et annonces de votre Amicale sur un seul espace.</p></div></article>
+<article class="news-card scroll-reveal stagger-2"><div class="news-img">🤝</div><div class="body"><span class="tag">Événement</span><h3>La force de notre communauté</h3><p>Ensemble, favorisons l’entraide, l’intégration et la réussite des étudiants.</p></div></article>
+<article class="news-card scroll-reveal stagger-3"><div class="news-img">🏠</div><div class="body"><span class="tag">Logement</span><h3>Le service logement</h3><p>Consultez les informations et les étapes pour déposer votre demande.</p></div></article>
 </div></section>
 
-<section class="section section-alt" id="galerie"><div class="section-head"><div><div class="eyebrow">Galerie</div><h2>La vie de l’AEDT en images</h2><p>Les souvenirs et les activités de notre communauté.</p></div><a href="admin.html">Gérer la galerie →</a></div><div class="news-grid" id="galleryGrid"><article class="news-card"><div class="news-img">📷</div><div class="body"><h3>Galerie AEDT</h3><p>Les photos publiées par l’administration apparaîtront ici.</p></div></article></div></section>
+<section class="section section-alt" id="galerie"><div class="section-head scroll-reveal"><div><div class="eyebrow">Galerie</div><h2>La vie de l’AEDT en images</h2><p>Les souvenirs et les activités de notre communauté.</p></div><a href="admin.html">Gérer la galerie →</a></div><div class="news-grid" id="galleryGrid"><article class="news-card scroll-reveal stagger-1"><div class="news-img">📷</div><div class="body"><h3>Galerie AEDT</h3><p>Les photos publiées par l’administration apparaîtront ici.</p></div></article></div></section>
 
 <section class="section wrap">
-<div class="cta">
+<div class="cta scroll-reveal">
 <div class="eyebrow">Prêt à nous rejoindre ?</div>
 <h2>Faites partie de l’aventure AEDT</h2>
 <p>Accédez à votre espace étudiant pour demander un logement, suivre vos dossiers et rester connecté à la vie de l’Amicale.</p>
@@ -136,11 +140,11 @@ document.getElementById('year').textContent=new Date().getFullYear();
   const safeUrl=u=>{const s=String(u??'').trim();return /^(https?:)?\/\//i.test(s)?s.replace(/"/g,'&quot;').replace(/</g,'&lt;'):''};
   const safeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const {data:news}=await sb.from('news').select('title,category,excerpt,image_url,video_url,video_caption,published_at').eq('published',true).order('published_at',{ascending:false}).limit(3);
-  if(news&&news.length)document.getElementById('newsGrid').innerHTML=news.map(n=>`<article class="news-card">${n.image_url?`<img src="${safeUrl(n.image_url)}" alt="" style="width:100%;height:160px;object-fit:cover">`:'<div class="news-img">📰</div>'}<div class="body"><span class="tag">${safeText(n.category||'Actualité')}</span><h3>${safeText(n.title)}</h3><p>${safeText(n.excerpt)}</p></div>${n.video_url?`<video src="${safeUrl(n.video_url)}" controls preload="metadata" style="width:100%;max-height:260px;background:#000"></video>${n.video_caption?`<small class="news-video-caption">${safeText(n.video_caption)}</small>`:''}`:''}</article>`).join('');
+  if(news&&news.length)document.getElementById('newsGrid').innerHTML=news.map((n, i)=>`<article class="news-card scroll-reveal stagger-${(i%3)+1} revealed">${n.image_url?`<img src="${safeUrl(n.image_url)}" alt="" style="width:100%;height:160px;object-fit:cover">`:'<div class="news-img">📰</div>'}<div class="body"><span class="tag">${safeText(n.category||'Actualité')}</span><h3>${safeText(n.title)}</h3><p>${safeText(n.excerpt)}</p></div>${n.video_url?`<video src="${safeUrl(n.video_url)}" controls preload="metadata" style="width:100%;max-height:260px;background:#000"></video>${n.video_caption?`<small class="news-video-caption">${safeText(n.video_caption)}</small>`:''}`:''}</article>`).join('');
   const {data:profile}=await sb.from('president_profile').select('name,quote,role,photo_url,video_url,active').eq('active',true).limit(1).maybeSingle();
   if(profile){if(profile.quote)document.getElementById('presidentQuote').textContent='« '+profile.quote+' »';if(profile.name)document.getElementById('presidentName').innerHTML='<strong>'+safeText(profile.name)+'</strong>'+(profile.role?' — '+safeText(profile.role):'');if(profile.photo_url){const art=document.getElementById('presidentArt');if(art)art.innerHTML='<img src="'+safeUrl(profile.photo_url)+'" alt="Photo du Président" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"><div class="president-photo-badge"><span class="badge-crown">👑</span>Président AEDT</div>'}if(profile.video_url){const box=document.getElementById('presidentVideo');if(box)box.innerHTML='<video src="'+safeUrl(profile.video_url)+'" controls preload="metadata"></video>'}}
   const {data:gallery}=await sb.from('gallery').select('image_url,caption,published').eq('published',true).order('created_at',{ascending:false}).limit(3);
-  if(gallery&&gallery.length)document.getElementById('galleryGrid').innerHTML=gallery.map(g=>`<article class="news-card"><img src="${safeUrl(g.image_url)}" alt="" style="width:100%;height:160px;object-fit:cover"><div class="body"><h3>${safeText(g.caption||'Photo AEDT')}</h3></div></article>`).join('');
+  if(gallery&&gallery.length)document.getElementById('galleryGrid').innerHTML=gallery.map((g, i)=>`<article class="news-card scroll-reveal stagger-${(i%3)+1} revealed"><img src="${safeUrl(g.image_url)}" alt="" style="width:100%;height:160px;object-fit:cover"><div class="body"><h3>${safeText(g.caption||'Photo AEDT')}</h3></div></article>`).join('');
  }catch(e){console.warn('Contenu dynamique AEDT indisponible',e)}
 })();
 </script>
