@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Actualités, communiqués officiels et vie associative de l'Amicale des Étudiants de Diass à Thiès (AEDT).">
+<title>Actualités & Vie de l'Amicale — AEDT</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/actualites.css">
+<link rel="stylesheet" href="assets/whatsapp.css">
+<script src="assets/site.js?v=2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="assets/whatsapp.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-aedt.jpeg" alt="Logo AEDT" onerror="this.style.display='none'">
+      <span>AEDT<small>Amicale des Étudiants de Diass a Thiès</small></span>
+    </a>
+    <nav class="nav-links" aria-label="Navigation principale">
+      <a href="index.html">Accueil</a>
+      <a href="actualites.html" aria-current="page">Actualités</a>
+      <a href="index.html#amicale">L’Amicale</a>
+      <a href="services.html">Services</a>
+      <a href="logement.html">Logement</a>
+      <a class="btn btn-gold" href="etudiant.html">Espace étudiant</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- Hero Actualités -->
+  <section class="news-hero">
+    <div class="wrap">
+      <div class="news-hero-inner">
+        <div class="news-hero-pill">
+          <span class="pulse-dot"></span>
+          <span>Portail d’Information Officiel</span>
+        </div>
+        <h1>Actualités & <span>Vie de l’AEDT</span></h1>
+        <p>Restez informé en direct de la vie estudiantine : campagne de logement, communiqués officiels, événements culturels, bourses et accompagnement des étudiants de Diass à Thiès.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contrôles : Recherche et filtres par catégorie -->
+  <div class="wrap news-controls-wrap">
+    <div class="news-controls-card">
+      <div class="news-search-row">
+        <div class="news-search-box">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="search" id="newsSearchInput" placeholder="Rechercher une actualité, un mot-clé, un communiqué..." aria-label="Rechercher une actualité">
+        </div>
+        <div class="news-filter-chips" id="categoryChips">
+          <button type="button" class="filter-chip active" data-category="ALL">Toutes <span class="chip-count" id="countAll">0</span></button>
+          <button type="button" class="filter-chip" data-category="Logement">🏠 Logement</button>
+          <button type="button" class="filter-chip" data-category="Vie étudiante">🎓 Vie étudiante</button>
+          <button type="button" class="filter-chip" data-category="Communiqué">📢 Communiqués</button>
+          <button type="button" class="filter-chip" data-category="Événement">🎉 Événements</button>
+          <button type="button" class="filter-chip" data-category="Pédagogie">📚 Pédagogie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- Article À la Une (Featured) -->
+    <section class="news-featured-section" id="featuredSection" style="display:none;">
+      <!-- Rempli dynamiquement -->
+    </section>
+
+    <!-- Grille des articles -->
+    <section class="news-grid-section">
+      <div class="news-section-title-bar">
+        <div>
+          <h2 id="gridSectionTitle">Toutes les publications</h2>
+          <p id="gridSectionSubtitle">Les dernières nouvelles publiées par l’administration de l’AEDT</p>
+        </div>
+      </div>
+
+      <div class="news-articles-grid" id="newsGrid">
+        <!-- Rempli dynamiquement -->
+      </div>
+    </section>
+
+    <!-- Communiqués Officiels rapides -->
+    <section class="news-official-releases">
+      <div class="official-header">
+        <div class="official-badge-icon">📜</div>
+        <div>
+          <h2>Directives & Communiqués Officiels</h2>
+          <p>Consultez les notes de service et décisions de la Présidence et du Bureau Exécutif</p>
+        </div>
+      </div>
+      <div class="official-list">
+        <div class="official-item">
+          <div class="official-item-info">
+            <strong>Note de service relative à la campagne de logement 2026/2027</strong>
+            <span>Commission Logement · Validé par la Présidence</span>
+          </div>
+          <a href="logement.html" class="btn-consult">Consulter</a>
+        </div>
+        <div class="official-item">
+          <div class="official-item-info">
+            <strong>Procédure de raccordement à l’Espace Étudiant AEDT</strong>
+            <span>Commission Pédagogique & Numérique</span>
+          </div>
+          <a href="etudiant.html" class="btn-consult">Espace étudiant</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bannière canal WhatsApp -->
+    <section class="news-whatsapp-banner">
+      <div class="wa-banner-content">
+        <span class="wa-pill">Canal Officiel AEDT</span>
+        <h2>Ne ratez aucune annonce urgente de l’Amicale</h2>
+        <p>Recevez en temps réel sur votre smartphone les alertes logements, les dates de versement des bourses et les convocations aux assemblées générales.</p>
+      </div>
+      <a href="https://chat.whatsapp.com/" target="_blank" rel="noopener noreferrer" class="btn-wa-join">
+        <span>Rejoindre le canal WhatsApp</span>
+        <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.18c-.24.68-1.39 1.3-1.92 1.38-.49.08-1.12.11-3.23-.76-2.53-1.05-4.15-3.63-4.28-3.8-.13-.17-1.02-1.36-1.02-2.59 0-1.23.65-1.83.88-2.08.23-.25.51-.31.68-.31.17 0 .34.01.49.02.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.06.13.1.29.02.46-.08.17-.12.28-.24.42-.12.14-.26.31-.37.42-.12.12-.25.25-.11.49.14.24.62 1.02 1.33 1.65.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.18 1.26z"/></svg>
+      </a>
+    </section>
+  </div>
+</main>
+
+<!-- Modale Lecteur d'Article -->
+<div class="news-modal-overlay" id="articleModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="news-modal-container">
+    <div class="news-modal-top">
+      <button type="button" class="news-modal-close" id="modalCloseBtn" aria-label="Fermer la modale">✕</button>
+      <div class="news-modal-media" id="modalMedia"></div>
+    </div>
+    <div class="news-modal-scroll">
+      <div class="modal-article-meta">
+        <span class="category-pill" id="modalCategory">Actualité</span>
+        <span style="font-size:0.84rem;color:#798a9c;" id="modalDate">16 Octobre 2026</span>
+      </div>
+      <h2 class="news-modal-title" id="modalTitle">Titre de l’actualité</h2>
+      <div class="news-modal-excerpt" id="modalExcerpt" style="display:none;"></div>
+      <div class="news-modal-content" id="modalContent"></div>
+      <div id="modalVideoSection" style="display:none;"></div>
+    </div>
+    <div class="news-modal-footer">
+      <div class="modal-author-tag">
+        <div class="modal-author-avatar">AEDT</div>
+        <div class="modal-author-text">
+          <strong>Bureau Exécutif AEDT</strong>
+          <span>Direction de la Communication & Presse</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" class="btn-share-wa" id="modalShareWa">
+          <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.18c-.24.68-1.39 1.3-1.92 1.38-.49.08-1.12.11-3.23-.76-2.53-1.05-4.15-3.63-4.28-3.8-.13-.17-1.02-1.36-1.02-2.59 0-1.23.65-1.83.88-2.08.23-.25.51-.31.68-.31.17 0 .34.01.49.02.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.06.13.1.29.02.46-.08.17-.12.28-.24.42-.12.14-.26.31-.37.42-.12.12-.25.25-.11.49.14.24.62 1.02 1.33 1.65.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.18 1.26z"/></svg>
+          Partager
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <h3>AEDT</h3>
+        <p>Amicale des Étudiants de Diass a Thiès<br><em>« Ensemble, plus loin ! »</em></p>
+      </div>
+      <div>
+        <h3>Liens utiles</h3>
+        <a href="index.html">Accueil</a>
+        <a href="actualites.html">Actualités</a>
+        <a href="services.html">Services</a>
+        <a href="logement.html">Logement</a>
+      </div>
+      <div>
+        <h3>Services</h3>
+        <a href="etudiant.html">Espace étudiant</a>
+        <a href="logement.html">Demande de logement</a>
+        <a href="connexion.html">Connexion</a>
+        <a href="admin.html">Administration</a>
+      </div>
+      <div>
+        <h3>Contact</h3>
+        <p>Thiès, Sénégal<br>Contactez l’AEDT via l’espace étudiant ou les canaux officiels de l’Amicale.</p>
+      </div>
+    </div>
+    <div class="footer-bottom">© <span id="year"></span> AEDT — Tous droits réservés.</div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Sécurisation XSS
+const safeText = v => String(v ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+const safeUrl = u => {
+  const s = String(u ?? '').trim();
+  return /^(https?:)?\/\//i.test(s) ? s.replace(/"/g, '&quot;').replace(/</g, '&lt;') : '';
+};
+
+// Données par défaut hautement qualitatives si Supabase vide ou hors-ligne
+const FALLBACK_NEWS = [
+  {
+    id: 'f-1',
+    title: 'Lancement officiel de la campagne de logement universitaire 2026/2027 à Thiès',
+    category: 'Logement',
+    excerpt: 'La Commission Logement de l’AEDT ouvre officiellement le dépôt des dossiers de candidature pour l’année universitaire 2026/2027. Tous les étudiants ressortissants de Diass inscrits à Thiès sont invités à postuler en ligne.',
+    content: `La commission d'attribution des logements de l'Amicale des Étudiants de Diass à Thiès (AEDT) informe l'ensemble des étudiants de la commune de Diass poursuivant leurs études universitaires à Thiès de l'ouverture officielle de la campagne de logement 2026/2027.\n\nCritères de sélection :\n1. Être régulièrement inscrit dans un établissement d'enseignement supérieur à Thiès (UIDT, EPT, ISEP, etc.)\n2. Fournir une attestation d'inscription ou carte d'étudiant valide\n3. Compléter le formulaire officiel sur la plateforme numérique AEDT avec les pièces requises.\n\nLes dossiers seront examinés avec rigueur et équité par la commission paritaire. La date limite des dépôts est fixée au 15 novembre.`,
+    image_url: 'assets/hero-building.jpg',
+    video_url: null,
+    published_at: new Date().toISOString(),
+    is_featured: true
+  },
+  {
+    id: 'f-2',
+    title: 'Journée d’accueil, d’intégration et de parrainage des nouveaux bacheliers',
+    category: 'Vie étudiante',
+    excerpt: 'L’AEDT organise une grande journée d’intégration pour guider et faciliter l’installation des nouveaux étudiants à Thiès : orientation, démarches administratives et découverte du campus.',
+    content: `Afin d'assurer une transition fluide aux nouveaux bacheliers originaires de Diass arrivant dans les différents instituts et facultés de Thiès, l'AEDT met en place son traditionnel programme de parrainage.\n\nChaque nouvel arrivant sera accompagné par un aîné pour ses formalités d'inscription, la recherche de commodités et l'organisation de son travail universitaire.\n\nUn atelier interactif sur la vie universitaire sera également animé par des diplômés et cadres ressortissants de notre commune.`,
+    image_url: null,
+    video_url: null,
+    published_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+    is_featured: false
+  },
+  {
+    id: 'f-3',
+    title: 'Communiqué de la Présidence : Solidarité, excellence et renforcement des partenariats',
+    category: 'Communiqué',
+    excerpt: 'Le Président de l’AEDT réaffirme l’engagement du Bureau Exécutif à moderniser les services, élargir le parc de logements et soutenir chaque camarade étudiant dans son parcours de réussite.',
+    content: `Chers camarades, chers frères et sœurs de Diass,\n\nEn ce début de nouveau cycle, notre priorité absolue reste votre bien-être et votre réussite académique. Grâce aux efforts collectifs et au soutien des partenaires locaux, notre plateforme numérique permet désormais un traitement transparent et rapide de toutes vos requêtes.\n\nRestons unis dans la discipline, l'entraide et l'amour de notre terroir. Ensemble, plus loin !`,
+    image_url: null,
+    video_url: null,
+    published_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+    is_featured: false
+  },
+  {
+    id: 'f-4',
+    title: 'Séances de tutorat et renforcement pédagogique pour les étudiants en Licence',
+    category: 'Pédagogie',
+    excerpt: 'Des cours de soutien et de révision en mathématiques, économie, droit et sciences de l’ingénieur débuteront ce samedi dans les salles d’étude de l’Amicale.',
+    content: `Pour optimiser les résultats aux examens semestriels, la commission pédagogique met à disposition des séances intensives de tutorat animées par les étudiants en Master et doctorat.\n\nInscription gratuite via l'espace étudiant ou directement auprès des délégués de filières.`,
+    image_url: null,
+    video_url: null,
+    published_at: new Date(Date.now() - 86400000 * 8).toISOString(),
+    is_featured: false
+  },
+  {
+    id: 'f-5',
+    title: 'Grand Tournoi de Football de l’Intégration AEDT 2026',
+    category: 'Événement',
+    excerpt: 'Renforcer la cohésion et la fraternité par le sport : coup d’envoi de la compétition inter-quartiers et inter-promotions ce week-end à Thiès.',
+    content: `Le sport est un puissant vecteur de rassemblement. Le Bureau de l'AEDT invite tous les étudiants, sympathisants et partenaires à prendre part au Tournoi annuel de l'Intégration.\n\nDes animations, des remises de trophées et un grand moment de partage clôtureront la finale. Venez nombreux soutenir vos équipes !`,
+    image_url: null,
+    video_url: null,
+    published_at: new Date(Date.now() - 86400000 * 12).toISOString(),
+    is_featured: false
+  }
+];
+
+let allNews = [];
+let currentFilter = 'ALL';
+let currentSearch = '';
+
+// Helper date française
+function formatDateFr(dateStr) {
+  if (!dateStr) return 'Récemment';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch(e) {
+    return dateStr;
+  }
+}
+
+// Classe CSS par catégorie
+function getCategoryClass(cat) {
+  const c = String(cat || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (c.includes('logement')) return 'cat-logement';
+  if (c.includes('evenement')) return 'cat-evenement';
+  if (c.includes('communique')) return 'cat-communique';
+  if (c.includes('pedagogie')) return 'cat-pedagogie';
+  return 'cat-vie-etudiante';
+}
+
+// Emoji par catégorie
+function getCategoryIcon(cat) {
+  const c = String(cat || '').toLowerCase();
+  if (c.includes('logement')) return '🏠';
+  if (c.includes('evenement') || c.includes('événement')) return '🎉';
+  if (c.includes('communique') || c.includes('communiqué')) return '📢';
+  if (c.includes('pedagogie') || c.includes('pédagogie')) return '📚';
+  return '🎓';
+}
+
+// Partage WhatsApp
+function shareArticleOnWhatsApp(title, excerpt) {
+  const text = `📰 *${title}*\n\n${excerpt || ''}\n\n👉 Retrouvez l’actualité complète sur le portail officiel de l'AEDT : ${window.location.href}`;
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+// Modale Lecteur
+function openArticleModal(item) {
+  const modal = document.getElementById('articleModal');
+  const mediaContainer = document.getElementById('modalMedia');
+  const catEl = document.getElementById('modalCategory');
+  const dateEl = document.getElementById('modalDate');
+  const titleEl = document.getElementById('modalTitle');
+  const excerptEl = document.getElementById('modalExcerpt');
+  const contentEl = document.getElementById('modalContent');
+  const videoSec = document.getElementById('modalVideoSection');
+  const shareBtn = document.getElementById('modalShareWa');
+
+  catEl.textContent = `${getCategoryIcon(item.category)} ${item.category || 'Actualité'}`;
+  catEl.className = `category-pill ${getCategoryClass(item.category)}`;
+  dateEl.textContent = formatDateFr(item.published_at || item.created_at);
+  titleEl.textContent = item.title;
+
+  if (item.excerpt) {
+    excerptEl.textContent = item.excerpt;
+    excerptEl.style.display = 'block';
+  } else {
+    excerptEl.style.display = 'none';
+  }
+
+  contentEl.textContent = item.content || item.excerpt || 'Aucun détail supplémentaire renseigné.';
+
+  // Image d'en-tête
+  if (item.image_url) {
+    mediaContainer.innerHTML = `<img src="${safeUrl(item.image_url)}" alt="${safeText(item.title)}">`;
+    mediaContainer.style.display = 'block';
+  } else {
+    mediaContainer.innerHTML = `<div class="news-card-placeholder">${getCategoryIcon(item.category)}</div>`;
+    mediaContainer.style.display = 'block';
+  }
+
+  // Vidéo si existante
+  if (item.video_url) {
+    videoSec.style.display = 'block';
+    videoSec.innerHTML = `
+      <div class="news-modal-video-box">
+        <video src="${safeUrl(item.video_url)}" controls preload="metadata"></video>
+        ${item.video_caption ? `<small class="news-modal-video-caption">🎥 ${safeText(item.video_caption)}</small>` : ''}
+      </div>
+    `;
+  } else {
+    videoSec.style.display = 'none';
+    videoSec.innerHTML = '';
+  }
+
+  shareBtn.onclick = () => shareArticleOnWhatsApp(item.title, item.excerpt);
+
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeArticleModal() {
+  const modal = document.getElementById('articleModal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  // Mettre en pause la vidéo si elle jouait
+  const vid = modal.querySelector('video');
+  if (vid) vid.pause();
+}
+
+document.getElementById('modalCloseBtn').addEventListener('click', closeArticleModal);
+document.getElementById('articleModal').addEventListener('click', (e) => {
+  if (e.target.id === 'articleModal') closeArticleModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeArticleModal();
+});
+
+// Rendu des actualités
+function renderNews() {
+  const featuredContainer = document.getElementById('featuredSection');
+  const gridContainer = document.getElementById('newsGrid');
+  const countAll = document.getElementById('countAll');
+
+  // Filtrage
+  let filtered = allNews.filter(n => {
+    // Filtre catégorie
+    if (currentFilter !== 'ALL') {
+      const matchCat = (n.category || '').toLowerCase().includes(currentFilter.toLowerCase());
+      if (!matchCat) return false;
+    }
+    // Filtre recherche
+    if (currentSearch.trim()) {
+      const q = currentSearch.toLowerCase().trim();
+      const matchTitle = (n.title || '').toLowerCase().includes(q);
+      const matchExcerpt = (n.excerpt || '').toLowerCase().includes(q);
+      const matchContent = (n.content || '').toLowerCase().includes(q);
+      const matchCat = (n.category || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchExcerpt && !matchContent && !matchCat) return false;
+    }
+    return true;
+  });
+
+  countAll.textContent = allNews.length;
+
+  if (filtered.length === 0) {
+    featuredContainer.style.display = 'none';
+    gridContainer.innerHTML = `
+      <div class="news-empty-state">
+        <div class="icon">🔍</div>
+        <h3>Aucun article trouvé</h3>
+        <p>Essayez avec d’autres mots-clés ou réinitialisez le filtre de catégorie.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Article À la Une : prend le premier avec image ou le plus récent si aucun filtre actif
+  let featured = null;
+  let gridList = [...filtered];
+
+  if (!currentSearch && currentFilter === 'ALL') {
+    featured = gridList.shift();
+  }
+
+  // Rendu À la Une
+  if (featured) {
+    featuredContainer.style.display = 'block';
+    const catClass = getCategoryClass(featured.category);
+    const catIcon = getCategoryIcon(featured.category);
+    featuredContainer.innerHTML = `
+      <article class="news-featured-card">
+        <div class="news-featured-media">
+          <span class="featured-badge">✦ À la Une</span>
+          ${featured.video_url ? '<span class="has-video-badge">▶ Vidéo incluse</span>' : ''}
+          ${featured.image_url 
+            ? `<img src="${safeUrl(featured.image_url)}" alt="${safeText(featured.title)}">` 
+            : `<div class="news-card-placeholder">${catIcon}</div>`}
+        </div>
+        <div class="news-featured-content">
+          <div class="news-meta-row">
+            <span class="category-pill ${catClass}">${catIcon} ${safeText(featured.category || 'Actualité')}</span>
+            <span>📅 ${formatDateFr(featured.published_at || featured.created_at)}</span>
+            <span>⏱ 3 min de lecture</span>
+          </div>
+          <h2>${safeText(featured.title)}</h2>
+          <p>${safeText(featured.excerpt || (featured.content ? featured.content.substring(0, 180) + '...' : ''))}</p>
+          <div class="news-card-actions">
+            <button type="button" class="btn-read-more" data-article-id="${featured.id}">
+              <span>Lire l’article complet</span> →
+            </button>
+            <button type="button" class="btn-share-wa" data-share-id="${featured.id}">
+              <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.18c-.24.68-1.39 1.3-1.92 1.38-.49.08-1.12.11-3.23-.76-2.53-1.05-4.15-3.63-4.28-3.8-.13-.17-1.02-1.36-1.02-2.59 0-1.23.65-1.83.88-2.08.23-.25.51-.31.68-.31.17 0 .34.01.49.02.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.06.13.1.29.02.46-.08.17-.12.28-.24.42-.12.14-.26.31-.37.42-.12.14-.25.25-.11.49.14.24.62 1.02 1.33 1.65.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.18 1.26z"/></svg>
+              Partager
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  } else {
+    featuredContainer.style.display = 'none';
+  }
+
+  // Rendu de la grille
+  gridContainer.innerHTML = gridList.map(item => {
+    const catClass = getCategoryClass(item.category);
+    const catIcon = getCategoryIcon(item.category);
+    return `
+      <article class="news-card-pro">
+        <div class="news-card-media">
+          <div class="card-media-tags">
+            <span class="category-pill ${catClass}">${catIcon} ${safeText(item.category || 'Actualité')}</span>
+            ${item.video_url ? '<span class="media-type-badge">▶ Vidéo</span>' : ''}
+          </div>
+          ${item.image_url 
+            ? `<img src="${safeUrl(item.image_url)}" alt="${safeText(item.title)}" loading="lazy">` 
+            : `<div class="news-card-placeholder">${catIcon}</div>`}
+        </div>
+        <div class="news-card-body">
+          <div class="news-card-date">
+            <span>📅 ${formatDateFr(item.published_at || item.created_at)}</span>
+          </div>
+          <h3>${safeText(item.title)}</h3>
+          <p>${safeText(item.excerpt || (item.content ? item.content.substring(0, 140) + '...' : ''))}</p>
+          <div class="news-card-footer">
+            <button type="button" class="news-read-link" data-article-id="${item.id}">
+              Lire l’article →
+            </button>
+            <button type="button" class="news-share-mini" data-share-id="${item.id}" title="Partager sur WhatsApp">
+              <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.18c-.24.68-1.39 1.3-1.92 1.38-.49.08-1.12.11-3.23-.76-2.53-1.05-4.15-3.63-4.28-3.8-.13-.17-1.02-1.36-1.02-2.59 0-1.23.65-1.83.88-2.08.23-.25.51-.31.68-.31.17 0 .34.01.49.02.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.06.13.1.29.02.46-.08.17-.12.28-.24.42-.12.14-.26.31-.37.42-.12.14-.25.25-.11.49.14.24.62 1.02 1.33 1.65.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.18 1.26z"/></svg>
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  // Gestion des clics "Lire" et "Partager"
+  document.querySelectorAll('[data-article-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      const item = allNews.find(n => String(n.id) === String(id));
+      if (item) openArticleModal(item);
+    });
+  });
+
+  document.querySelectorAll('[data-share-id]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-share-id');
+      const item = allNews.find(n => String(n.id) === String(id));
+      if (item) shareArticleOnWhatsApp(item.title, item.excerpt);
+    });
+  });
+}
+
+// Chargement initial depuis Supabase avec fallback
+async function loadNewsData() {
+  try {
+    const sb = window.AEDT?.getSupabaseClient?.();
+    if (sb) {
+      const { data, error } = await sb
+        .from('news')
+        .select('*')
+        .eq('published', true)
+        .order('published_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        allNews = data;
+        renderNews();
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('Supabase news indisponible, affichage des actualités initiales', e);
+  }
+
+  // Si la table est encore vide ou déconnectée, on présente la sélection officielle
+  allNews = FALLBACK_NEWS;
+  renderNews();
+}
+
+// Écouteurs de recherche
+document.getElementById('newsSearchInput').addEventListener('input', (e) => {
+  currentSearch = e.target.value;
+  renderNews();
+});
+
+// Écouteurs de filtres
+document.querySelectorAll('#categoryChips .filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#categoryChips .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.getAttribute('data-category');
+    renderNews();
+  });
+});
+
+// Lancement au chargement
+document.addEventListener('DOMContentLoaded', loadNewsData);
+</script>
+</body>
+</html>
