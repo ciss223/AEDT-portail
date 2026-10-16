@@ -149,7 +149,8 @@ section{scroll-margin-top:88px}
 
 /* --- Mot du president --- */
 .president{display:grid;grid-template-columns:auto 1.2fr;gap:40px;align-items:center;background:var(--glass-bg-strong);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:44px;box-shadow:var(--glass-shadow);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
-.president-art{width:200px;height:200px;border-radius:24px;background:linear-gradient(135deg,#0b55a1,#06254a);display:grid;place-items:center;font-size:5rem;color:#fff;box-shadow:0 14px 40px rgba(11,85,161,.4);border:1px solid rgba(255,255,255,.2)}
+.president-art{width:240px;height:240px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#0b55a1,#06254a);display:grid;place-items:center;font-size:5rem;color:#fff;box-shadow:0 0 0 5px #fff,0 0 0 8px var(--blue),0 18px 48px rgba(11,85,161,.38);flex-shrink:0}
+.president-art img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;border-radius:0}
 .president blockquote{margin:14px 0 16px;font-size:1.2rem;line-height:1.6;color:var(--ink);border-left:4px solid var(--gold);padding-left:18px;font-style:italic}
 /* Video du President sous le mot du President */
 .president-video{margin-top:22px}
@@ -185,7 +186,7 @@ section{scroll-margin-top:88px}
   .stats-grid{grid-template-columns:repeat(2,1fr);gap:26px}
   .footer-grid{grid-template-columns:1fr 1fr}
   .president{grid-template-columns:1fr;text-align:center;padding:32px}
-  .president-art{margin:0 auto;width:160px;height:160px}
+  .president-art{margin:0 auto;width:180px;height:180px}
   .president blockquote{text-align:left}
   .section-head{flex-direction:column;align-items:flex-start}
 }
