@@ -2497,7 +2497,13 @@
     });
 
     if (signUpError) {
-      throw new Error(signUpError.message || 'Impossible de créer le compte utilisateur.');
+      const message = signUpError.message || 'Impossible de créer le compte utilisateur.';
+      if (/already registered|already exists|user_already_exists/i.test(message)) {
+        throw new Error(
+          'Cette adresse e-mail est déjà utilisée. Pour donner un rôle administrateur à ce compte, fermez cette fenêtre et utilisez « Modifier » dans sa ligne.'
+        );
+      }
+      throw new Error(message);
     }
 
     const newUserId = signUpData?.user?.id;
