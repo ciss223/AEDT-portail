@@ -1506,7 +1506,7 @@
 
     $('#login-view').hidden = true;
     $('#admin-app').hidden = false;
-    openSidebar();
+    closeSidebar();
     await loadDashboard();
   }
 
@@ -1932,6 +1932,10 @@
   $('#sidebar-overlay')?.addEventListener('click', closeSidebar);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeSidebar();
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      $('#global-search')?.focus();
+    }
   });
   $('#btn-open-create-admin')?.addEventListener('click', openCreateAdminDialog);
   $('#create-admin-dialog-close')?.addEventListener('click', closeCreateAdminDialog);
