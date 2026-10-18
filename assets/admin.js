@@ -1952,27 +1952,22 @@
   }
 
   async function authorize() {
-    const { data, error } = await state.client.rpc('is_admin');
-    if (error || !data) {
-      $('#login-view').hidden = false;
-      $('#login-message').innerHTML = `<p class="error">${escapeHtml(error?.message || 'Ce compte ne dispose pas des droits administrateur.')}</p>`;
-      const result = await state.client.auth.signOut();
-      if (result.error) notify(`La session non autorisée n’a pas pu être fermée : ${result.error.message}`, 'error');
-      return;
-    }
     const { data: userData, error: userError } = await state.client.auth.getUser();
-    if (userError || !userData.user) {
+    if (userError || !userData?.user) {
+      $('#login-view').hidden = false;
       $('#login-message').innerHTML = `<p class="error">${escapeHtml(userError?.message || 'Session utilisateur introuvable.')}</p>`;
       return;
     }
     state.user = userData.user;
 
-    // Check if super admin
+    let isAdmin = false;
     try {
-      const { data: isSuper } = await state.client.rpc('is_super_admin');
-      state.isSuperAdmin = Boolean(isSuper);
+      const { data, error } = await state.client.rpc('is_admin');
+      if (!error && data) {
+        isAdmin = true;
+      }
     } catch {
-      state.isSuperAdmin = false;
+      isAdmin = false;
     }
 
     // Retrieve profile to display full name and exact role
@@ -1982,8 +1977,29 @@
       .maybeSingle();
 
     state.currentUserProfile = prof || null;
+
+    if (!isAdmin && prof && (prof.role === 'admin' || prof.role === 'super_admin')) {
+      isAdmin = true;
+    }
+
+    if (!isAdmin) {
+      $('#login-view').hidden = false;
+      $('#login-message').innerHTML = '<p class="error">Ce compte ne dispose pas des droits administrateur.</p>';
+      const result = await state.client.auth.signOut();
+      if (result.error) notify(`La session non autorisée n’a pas pu être fermée : ${result.error.message}`, 'error');
+      return;
+    }
+
+    // Check if super admin
     if (prof?.role === 'super_admin') {
       state.isSuperAdmin = true;
+    } else {
+      try {
+        const { data: isSuper } = await state.client.rpc('is_super_admin');
+        state.isSuperAdmin = Boolean(isSuper);
+      } catch {
+        state.isSuperAdmin = false;
+      }
     }
 
     const displayName = (prof ? `${prof.prenom || prof.first_name || ''} ${prof.nom || ''}`.trim() : '') || state.user.email || 'Administrateur AEDT';
