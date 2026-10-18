@@ -225,6 +225,8 @@ drop policy if exists "profiles_self_select" on public.profiles;
 create policy "profiles_self_select" on public.profiles for select to authenticated using (id=auth.uid() or public.is_admin());
 drop policy if exists "profiles_self_write" on public.profiles;
 create policy "profiles_self_write" on public.profiles for insert to authenticated with check (id=auth.uid() and role='student');
+drop policy if exists "profiles_admin_insert" on public.profiles;
+create policy "profiles_admin_insert" on public.profiles for insert to authenticated with check (public.is_admin());
 drop policy if exists "profiles_self_update" on public.profiles;
 create policy "profiles_self_update" on public.profiles for update to authenticated using (id=auth.uid() or public.is_admin()) with check (public.is_super_admin() or (public.is_admin() and role in ('student','admin')) or (id=auth.uid() and role='student'));
 
@@ -495,13 +497,13 @@ execute function public.record_document_review_activity();
 -- ============================================================
 -- AEDT V14 : Gestion des connexions par le Super Administrateur
 -- ============================================================
--- Validation immédiate d'e-mail pour les comptes créés par un Super Administrateur
+-- Validation immédiate d'e-mail pour les comptes créés dans l'administration
 create or replace function public.admin_confirm_user_email(p_user_id uuid)
 returns boolean language plpgsql security definer set search_path=public,auth,pg_temp
 as $$
 begin
- if not public.is_super_admin() then
-  raise exception 'Action réservée aux super administrateurs.' using errcode='42501';
+ if not public.is_admin() then
+  raise exception 'Action réservée aux administrateurs.' using errcode='42501';
  end if;
  update auth.users set email_confirmed_at = coalesce(email_confirmed_at, now()) where id = p_user_id;
  return true;

@@ -2024,7 +2024,7 @@
 
     const btnCreateAdmin = $('#btn-open-create-admin');
     if (btnCreateAdmin) {
-      btnCreateAdmin.hidden = !state.isSuperAdmin;
+      btnCreateAdmin.hidden = false;
     }
 
     $('#login-view').hidden = true;
@@ -2267,10 +2267,6 @@
   let lastCreatedCredentials = null;
 
   function openCreateAdminDialog() {
-    if (!state.isSuperAdmin) {
-      notify('Seul un Super Administrateur peut créer des comptes d’administration.', 'error');
-      return;
-    }
     const dialog = $('#create-admin-dialog');
     if (!dialog) return;
     const form = $('#create-admin-form');
@@ -2283,8 +2279,26 @@
     const successBox = $('#create-admin-success-box');
     if (successBox) successBox.hidden = true;
     if (form) form.hidden = false;
+
+    // Masquer l'option Super Admin si l'utilisateur actuel n'est pas Super Admin
+    const roleSelect = $('#new-admin-role');
+    const optSuper = roleSelect?.querySelector('option[value="super_admin"]');
+    if (optSuper) {
+      optSuper.hidden = !state.isSuperAdmin;
+      optSuper.disabled = !state.isSuperAdmin;
+    }
+    if (roleSelect && !state.isSuperAdmin) {
+      roleSelect.value = 'admin';
+    }
+
     lastCreatedCredentials = null;
+    dialog.scrollTop = 0;
     if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    setTimeout(() => {
+      dialog.scrollTop = 0;
+      $('#new-admin-first-name')?.focus({ preventScroll: true });
+    }, 25);
   }
 
   function closeCreateAdminDialog() {
@@ -2294,8 +2308,9 @@
 
   async function createAdminAccount(event) {
     event.preventDefault();
-    if (!state.isSuperAdmin) {
-      notify('Action réservée aux Super Administrateurs.', 'error');
+    const role = $('#new-admin-role').value;
+    if (role === 'super_admin' && !state.isSuperAdmin) {
+      notify('Seul un Super Administrateur peut créer des comptes Super Administrateurs.', 'error');
       return;
     }
     const submitBtn = $('#create-admin-submit-btn');
@@ -2310,7 +2325,6 @@
     const email = $('#new-admin-email').value.trim().toLowerCase();
     const phone = $('#new-admin-phone').value.trim();
     const password = $('#new-admin-password').value;
-    const role = $('#new-admin-role').value;
 
     if (!firstName || !lastName || !email || !password) {
       if (errorBox) {
@@ -2344,7 +2358,7 @@
         throw new Error('Configuration Supabase indisponible.');
       }
 
-      // Create isolated client to avoid overwriting the current active super admin session
+      // Client isolé pour ne pas écraser la session administrateur active
       const tempClient = window.supabase.createClient(url, key, {
         auth: {
           persistSession: false,
@@ -2363,7 +2377,8 @@
             prenom: firstName,
             nom: lastName,
             full_name: fullName,
-            telephone: phone || null
+            telephone: phone || null,
+            role: role
           }
         }
       });
@@ -2381,26 +2396,41 @@
         throw new Error('Un compte utilisateur existe déjà avec cette adresse e-mail.');
       }
 
-      // Elevate role and populate profile details via authenticated super admin client
-      const { error: profileError } = await state.client.from('profiles').upsert({
-        id: newUserId,
-        first_name: firstName,
-        prenom: firstName,
-        nom: lastName,
-        telephone: phone || null,
-        role: role,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+      // Laisser le temps au déclencheur Supabase handle_new_user d'insérer le profil
+      await new Promise(r => setTimeout(r, 600));
+
+      let { error: profileError } = await state.client.from('profiles')
+        .update({
+          first_name: firstName,
+          prenom: firstName,
+          nom: lastName,
+          telephone: phone || null,
+          role: role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', newUserId);
 
       if (profileError) {
-        throw new Error(`Le compte a été créé mais la mise à jour du rôle a échoué : ${profileError.message}`);
+        // En cas d'échec de l'update, tenter upsert
+        const { error: upsertErr } = await state.client.from('profiles').upsert({
+          id: newUserId,
+          first_name: firstName,
+          prenom: firstName,
+          nom: lastName,
+          telephone: phone || null,
+          role: role,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+        if (upsertErr) {
+          console.warn('Mise à jour du profil :', upsertErr);
+        }
       }
 
-      // Confirm email automatically so the account is active immediately
+      // Tenter la confirmation d'email automatique
       try {
         await state.client.rpc('admin_confirm_user_email', { p_user_id: newUserId });
       } catch (confirmErr) {
-        console.warn('admin_confirm_user_email non disponible :', confirmErr);
+        console.warn('admin_confirm_user_email :', confirmErr);
       }
 
       // Store credentials for copying
