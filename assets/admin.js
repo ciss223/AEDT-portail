@@ -67,6 +67,11 @@
     })[view] || 'Vue générale';
   }
 
+  function syncSidebarState() {
+    const isOpen = $('#admin-sidebar')?.classList.contains('is-open');
+    document.body.classList.toggle('sidebar-open', Boolean(isOpen));
+  }
+
   function openSidebar() {
     $('#admin-sidebar')?.classList.add('is-open');
     $('#sidebar-overlay')?.classList.add('is-open');
@@ -75,6 +80,7 @@
       toggle.setAttribute('aria-expanded', 'true');
       toggle.classList.add('is-active');
     }
+    syncSidebarState();
   }
 
   function closeSidebar() {
@@ -85,6 +91,7 @@
       toggle.setAttribute('aria-expanded', 'false');
       toggle.classList.remove('is-active');
     }
+    syncSidebarState();
   }
 
   function toggleSidebar() {
@@ -142,6 +149,28 @@
 
   function badge(status) {
     return `<span class="status-badge ${statusClass(status)}">${escapeHtml(status || 'Inconnu')}</span>`;
+  }
+
+  function applyAdminTheme(theme) {
+    const isDark = theme === 'dark';
+    document.body.classList.toggle('is-dark', isDark);
+    document.body.classList.toggle('is-light', !isDark);
+    const button = $('#theme-toggle-btn');
+    if (button) {
+      button.textContent = isDark ? '☀️' : '🌙';
+      button.setAttribute('title', isDark ? 'Basculer vers le thème clair' : 'Basculer vers le thème sombre');
+      button.setAttribute('aria-label', isDark ? 'Basculer vers le thème clair' : 'Basculer vers le thème sombre');
+    }
+    try {
+      window.localStorage.setItem('aedt-admin-theme', isDark ? 'dark' : 'light');
+    } catch {
+      // Local storage may be unavailable in private browsing or restricted contexts.
+    }
+  }
+
+  function toggleAdminTheme() {
+    const nextTheme = document.body.classList.contains('is-dark') ? 'light' : 'dark';
+    applyAdminTheme(nextTheme);
   }
 
   function renderChart(data) {
@@ -1477,6 +1506,7 @@
 
     $('#login-view').hidden = true;
     $('#admin-app').hidden = false;
+    openSidebar();
     await loadDashboard();
   }
 
@@ -1509,6 +1539,7 @@
       notify(`Impossible de fermer la session : ${error.message}`, 'error');
       return;
     }
+    closeSidebar();
     $('#admin-app').hidden = true;
     $('#login-view').hidden = false;
     $('#login-password').value = '';
@@ -1879,6 +1910,20 @@
   }
 
   $('#requests-export').addEventListener('click', exportRequests);
+  $('#print-overview-report')?.addEventListener('click', () => {
+    const overview = $('#view-overview');
+    if (overview && overview.hidden) setView('overview');
+    window.print();
+  });
+  $('#theme-toggle-btn')?.addEventListener('click', toggleAdminTheme);
+  const preferredTheme = (() => {
+    try {
+      return window.localStorage.getItem('aedt-admin-theme');
+    } catch {
+      return null;
+    }
+  })();
+  applyAdminTheme(preferredTheme === 'dark' ? 'dark' : 'light');
   $('#refresh-button').addEventListener('click', loadDashboard);
   $('#activity-refresh').addEventListener('click', loadActivity);
   $('#activity-shortcut').addEventListener('click', () => setView('activity'));
