@@ -32,6 +32,7 @@
     pageStudents: [],
     pageDocuments: [],
     pageMessages: [],
+    selectedRequests: new Set(),
     presidentId: null,
     presidentPhotoUrl: null,
     presidentVideoUrl: null,
@@ -226,9 +227,191 @@
     setMetric('messages', data.messages_pending);
     $('#nav-request-count').textContent = data.pending;
     $('#nav-message-count').textContent = data.messages_pending;
+    renderKPIs(data);
+    $('#nav-request-count').textContent = data.pending ?? 0;
+    $('#nav-message-count').textContent = data.messages_pending ?? 0;
     renderChart(data);
     renderRecent(data.recent_requests || [], data.recent_messages || [], data.recent_activity || []);
+    await loadAnalytics();
   }
+
+  function renderKPIs(data) {
+    const totalRequests = Number(data.requests) || 0;
+    const pending = Number(data.pending) || 0;
+    const review = Number(data.review) || 0;
+    const accepted = Number(data.accepted) || 0;
+    const refused = Number(data.refused) || 0;
+    const processed = totalRequests - pending;
+
+    // 1. Taux de traitement global
+    const processingRate = totalRequests > 0 ? Math.round((processed / totalRequests) * 100) : 0;
+    const elProcRate = $('#kpi-processing-rate');
+    const elProcDetail = $('#kpi-processing-detail');
+    const elProcFill = $('#kpi-processing-fill');
+    if (elProcRate) elProcRate.textContent = `${processingRate} %`;
+    if (elProcDetail) elProcDetail.textContent = `${processed} / ${totalRequests} traités`;
+    if (elProcFill) elProcFill.style.width = `${processingRate}%`;
+
+    // 2. Taux d'acceptation (décisions rendues)
+    const decided = accepted + refused;
+    const approvalRate = decided > 0 ? Math.round((accepted / decided) * 100) : 0;
+    const elAppRate = $('#kpi-approval-rate');
+    const elAppDetail = $('#kpi-approval-detail');
+    const elAppFill = $('#kpi-approval-fill');
+    if (elAppRate) elAppRate.textContent = `${approvalRate} %`;
+    if (elAppDetail) elAppDetail.textContent = decided > 0 ? `${accepted} sur ${decided} décision(s)` : `${accepted} acceptée(s)`;
+    if (elAppFill) elAppFill.style.width = `${approvalRate}%`;
+
+    // 3. Contrôle documentaire
+    const totalDocs = Number(data.documents) || 0;
+    const pendingDocs = Number(data.documents_pending) || 0;
+    const verifiedDocs = Math.max(0, totalDocs - pendingDocs);
+    const docRate = totalDocs > 0 ? Math.round((verifiedDocs / totalDocs) * 100) : 0;
+    const elDocRate = $('#kpi-doc-rate');
+    const elDocDetail = $('#kpi-doc-detail');
+    const elDocFill = $('#kpi-doc-fill');
+    if (elDocRate) elDocRate.textContent = `${docRate} %`;
+    if (elDocDetail) elDocDetail.textContent = `${verifiedDocs} / ${totalDocs} vérifiées`;
+    if (elDocFill) elDocFill.style.width = `${docRate}%`;
+
+    // 4. Réactivité messagerie
+    const pendingMsgs = Number(data.messages_pending) || 0;
+    const msgRate = pendingMsgs === 0 ? 100 : Math.max(10, 100 - pendingMsgs * 15);
+    const elMsgRate = $('#kpi-msg-rate');
+    const elMsgDetail = $('#kpi-msg-detail');
+    const elMsgFill = $('#kpi-msg-fill');
+    if (elMsgRate) elMsgRate.textContent = `${msgRate} %`;
+    if (elMsgDetail) elMsgDetail.textContent = `${pendingMsgs} en attente`;
+    if (elMsgFill) elMsgFill.style.width = `${msgRate}%`;
+  }
+
+  async function loadAnalytics() {
+    try {
+      const { data, error } = await state.client.from('housing_requests')
+        .select('etablissement,sexe,niveau');
+      if (error || !data) return;
+
+      renderSchoolBreakdown(data);
+      renderDemographicBreakdown(data);
+      populateSchoolFilter(data);
+    } catch (e) {
+      console.warn('Analytics loading error:', e);
+    }
+  }
+
+  function renderSchoolBreakdown(requests) {
+    const counts = {};
+    requests.forEach(r => {
+      const school = (r.etablissement || '').trim() || 'Non renseigné';
+      counts[school] = (counts[school] || 0) + 1;
+    });
+
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const total = requests.length;
+
+    const chip = $('#school-count-chip');
+    if (chip) chip.textContent = `${entries.length} établissement${entries.length > 1 ? 's' : ''}`;
+
+    const container = $('#school-breakdown');
+    if (!container) return;
+
+    if (!entries.length) {
+      container.innerHTML = '<p class="empty-state">Aucune donnée d’établissement enregistrée.</p>';
+      return;
+    }
+
+    const topSchools = entries.slice(0, 5);
+    const otherCount = entries.slice(5).reduce((sum, [, c]) => sum + c, 0);
+    if (otherCount > 0) {
+      topSchools.push(['Autres établissements', otherCount]);
+    }
+
+    container.innerHTML = topSchools.map(([school, count]) => {
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      return `<div class="breakdown-item">
+        <div class="breakdown-info">
+          <strong title="${escapeHtml(school)}">${escapeHtml(school)}</strong>
+          <span>${count} (${pct} %)</span>
+        </div>
+        <div class="breakdown-bar">
+          <div class="breakdown-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDemographicBreakdown(requests) {
+    const container = $('#demographic-breakdown');
+    if (!container) return;
+    const total = requests.length;
+    let male = 0;
+    let female = 0;
+
+    const levelCounts = {};
+
+    requests.forEach(r => {
+      const s = (r.sexe || '').trim().toLowerCase();
+      if (s.startsWith('m') || s === 'homme' || s === 'garcon') male++;
+      else if (s.startsWith('f') || s === 'femme' || s === 'fille') female++;
+
+      const niv = (r.niveau || 'Autre / Non renseigné').trim();
+      levelCounts[niv] = (levelCounts[niv] || 0) + 1;
+    });
+
+    const malePct = total > 0 ? Math.round((male / total) * 100) : 0;
+    const femalePct = total > 0 ? Math.round((female / total) * 100) : 0;
+
+    const sortedLevels = Object.entries(levelCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+
+    container.innerHTML = `
+      <div>
+        <div class="demo-section-title">Répartition par sexe</div>
+        <div class="demo-gender-grid">
+          <div class="demo-gender-card">
+            <div class="demo-gender-icon male">♂</div>
+            <div class="demo-gender-data">
+              <strong>${male} <small>(${malePct} %)</small></strong>
+              <small>Masculin</small>
+            </div>
+          </div>
+          <div class="demo-gender-card">
+            <div class="demo-gender-icon female">♀</div>
+            <div class="demo-gender-data">
+              <strong>${female} <small>(${femalePct} %)</small></strong>
+              <small>Féminin</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="demo-section-title">Niveaux académiques</div>
+        <div class="demo-levels-list">
+          ${sortedLevels.length ? sortedLevels.map(([level, count]) => {
+            const lpct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return `<div class="breakdown-item">
+              <div class="breakdown-info">
+                <strong>${escapeHtml(level)}</strong>
+                <span>${count} (${lpct} %)</span>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-fill" style="width:${lpct}%;background:linear-gradient(90deg,#9c8ae6,#6c58a8)"></div>
+              </div>
+            </div>`;
+          }).join('') : '<p class="empty-state">Aucun niveau renseigné.</p>'}
+        </div>
+      </div>
+    `;
+  }
+
+  function populateSchoolFilter(requests) {
+    const select = $('#request-school');
+    if (!select) return;
+    const currentVal = select.value;
+    const schools = Array.from(new Set(requests.map(r => (r.etablissement || '').trim()).filter(Boolean))).sort();
+    select.innerHTML = '<option value="">Tous les établissements</option>' +
+      schools.map(s => `<option value="${escapeHtml(s)}"${s === currentVal ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  }
+
 
   function renderRecent(requests, messages, activity) {
     $('#recent-requests').innerHTML = requests.length ? requests.map(item => `
@@ -256,6 +439,8 @@
     if (!state.client) return;
     const search = safeFilterText($('#request-search').value);
     const status = $('#request-status').value;
+    const school = $('#request-school')?.value || '';
+    const gender = $('#request-gender')?.value || '';
     const from = $('#request-from').value;
     const to = $('#request-to').value;
     const sort = $('#request-sort').value;
@@ -264,6 +449,8 @@
       { count: 'exact' }
     );
     if (status) query = query.eq('status', status);
+    if (school) query = query.eq('etablissement', school);
+    if (gender) query = query.eq('sexe', gender);
     if (state.requestUserId) query = query.eq('user_id', state.requestUserId);
     if (from) query = query.gte('created_at', `${from}T00:00:00`);
     if (to) query = query.lt('created_at', `${to}T23:59:59.999`);
@@ -274,12 +461,12 @@
     const ascending = sort === 'oldest';
     query = query.order(sort === 'updated' ? 'updated_at' : 'created_at', { ascending })
       .range(state.requestPage * PAGE_SIZE, (state.requestPage + 1) * PAGE_SIZE - 1);
-    $('#request-rows').innerHTML = '<tr><td colspan="7">Chargement des dossiers…</td></tr>';
+    $('#request-rows').innerHTML = '<tr><td colspan="8">Chargement des dossiers…</td></tr>';
     $('#request-cards').innerHTML = '<p class="empty-state">Chargement des dossiers…</p>';
     const { data, error, count } = await query;
     if (error) {
       $('#request-results').textContent = 'Erreur de chargement';
-      $('#request-rows').innerHTML = `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
+      $('#request-rows').innerHTML = `<tr><td colspan="8">${escapeHtml(error.message)}</td></tr>`;
       $('#request-cards').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       return;
     }
@@ -292,17 +479,40 @@
     renderRequests(state.pageRequests);
   }
 
+  function updateBulkBar() {
+    const bar = $('#bulk-actions-bar');
+    const countEl = $('#bulk-selected-count');
+    if (!bar) return;
+    const count = state.selectedRequests.size;
+    if (count > 0) {
+      bar.hidden = false;
+      if (countEl) countEl.textContent = count;
+    } else {
+      bar.hidden = true;
+    }
+  }
+
   function renderRequests(items) {
+    const selectAll = $('#select-all-requests');
+    if (selectAll) {
+      selectAll.checked = items.length > 0 && items.every(item => state.selectedRequests.has(item.id));
+    }
+    updateBulkBar();
+
     $('#request-rows').innerHTML = items.length ? items.map(item => `<tr>
+      <td class="col-check"><input type="checkbox" class="request-select-item" data-id="${escapeHtml(item.id)}" ${state.selectedRequests.has(item.id) ? 'checked' : ''} aria-label="Sélectionner ${escapeHtml(item.dossier_code)}"></td>
       <td><button class="record-link request-open" data-id="${escapeHtml(item.id)}">${escapeHtml(item.dossier_code)}</button></td>
       <td class="student-name"><strong>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)}</strong><small>${escapeHtml(item.telephone)}</small></td>
       <td>${escapeHtml(item.etablissement)}</td><td>${escapeHtml(item.niveau)}</td><td>${dateFormat(item.created_at)}</td>
       <td><select class="row-select request-status-edit" data-id="${escapeHtml(item.id)}" aria-label="Modifier le statut ${escapeHtml(item.dossier_code)}">
         ${['En attente', 'En étude', 'Acceptée', 'Refusée'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select></td>
       <td><button class="row-action request-open" data-id="${escapeHtml(item.id)}">Ouvrir le dossier</button></td></tr>`).join('')
-      : '<tr><td colspan="7">Aucun dossier ne correspond à ces critères.</td></tr>';
+      : '<tr><td colspan="8">Aucun dossier ne correspond à ces critères.</td></tr>';
     $('#request-cards').innerHTML = items.length ? items.map(item => `<article class="mobile-record">
-      <div class="mobile-record-head"><h3><button class="record-link request-open" data-id="${escapeHtml(item.id)}">${escapeHtml(item.dossier_code)}</button></h3>${badge(item.status)}</div>
+      <div class="mobile-record-head">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem"><input type="checkbox" class="request-select-item" data-id="${escapeHtml(item.id)}" ${state.selectedRequests.has(item.id) ? 'checked' : ''}> <button class="record-link request-open" data-id="${escapeHtml(item.id)}">${escapeHtml(item.dossier_code)}</button></label>
+        ${badge(item.status)}
+      </div>
       <p>${escapeHtml(item.prenom)} ${escapeHtml(item.nom)} · ${escapeHtml(item.etablissement)}<br>${escapeHtml(item.niveau)} · ${dateFormat(item.created_at)}</p>
       <select class="row-select request-status-edit" data-id="${escapeHtml(item.id)}" aria-label="Modifier le statut ${escapeHtml(item.dossier_code)}">
         ${['En attente', 'En étude', 'Acceptée', 'Refusée'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select></article>`).join('')
@@ -672,7 +882,12 @@
     ).order('created_at', { ascending: false }).range(state.documentPage * PAGE_SIZE, (state.documentPage + 1) * PAGE_SIZE - 1);
     const type = $('#document-type').value;
     const search = safeFilterText($('#document-search').value);
+    const statusFilter = $('#document-status-filter')?.value || '';
     if (type) query = query.eq('file_type', type);
+    if (statusFilter) {
+      const dbStatus = statusFilter === 'En attente' ? 'À vérifier' : statusFilter === 'À remplacer' ? 'À revoir' : statusFilter;
+      query = query.eq('verification_status', dbStatus);
+    }
     if (search) query = query.or(`request_code.ilike.%${search}%,original_name.ilike.%${search}%`);
     $('#document-rows').innerHTML = '<tr><td colspan="6">Chargement des documents…</td></tr>';
     const { data, error, count } = await query;
@@ -1369,6 +1584,118 @@
     }
   }
 
+
+  function downloadCsv(rows, filename) {
+    if (!rows.length) {
+      notify('Aucune donnée à exporter.', 'error');
+      return;
+    }
+    const columns = Object.keys(rows[0]);
+    const csvCell = value => {
+      let text = String(value ?? '');
+      if (/^[\t\r\n]/.test(text)) text = `'${text}`;
+      else if (/^[=+\-@]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const csv = [columns.join(';'), ...rows.map(row => columns.map(key =>
+      csvCell(row[key])
+    ).join(';'))].join('\r\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  async function applyBulkStatus() {
+    const newStatus = $('#bulk-status-select')?.value;
+    if (!newStatus) {
+      notify('Veuillez sélectionner un statut à appliquer au lot.', 'error');
+      return;
+    }
+    const ids = Array.from(state.selectedRequests);
+    if (!ids.length) {
+      notify('Aucun dossier sélectionné.', 'error');
+      return;
+    }
+    const button = $('#bulk-apply-status');
+    if (button) button.disabled = true;
+    try {
+      const { error } = await state.client.from('housing_requests')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .in('id', ids);
+      if (error) {
+        notify(`Erreur lors de la modification groupée : ${error.message}`, 'error');
+        return;
+      }
+      notify(`Statut « ${newStatus} » appliqué avec succès à ${ids.length} dossier(s).`);
+      state.selectedRequests.clear();
+      await Promise.all([loadRequests(), loadDashboard()]);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function exportBulkSelected() {
+    const ids = Array.from(state.selectedRequests);
+    if (!ids.length) {
+      notify('Aucun dossier sélectionné pour l’export.', 'error');
+      return;
+    }
+    const { data, error } = await state.client.from('housing_requests')
+      .select('dossier_code,nom,prenom,telephone,email,email_tuteur,telephone_tuteur,etablissement,filiere,niveau,sexe,adresse,status,created_at,updated_at')
+      .in('id', ids);
+    if (error || !data) {
+      notify(`Erreur d’export : ${error?.message || 'Données introuvables'}`, 'error');
+      return;
+    }
+    downloadCsv(data, 'demandes-selectionnees-aedt.csv');
+  }
+
+  function clearBulkSelection() {
+    state.selectedRequests.clear();
+    document.querySelectorAll('.request-select-item').forEach(cb => { cb.checked = false; });
+    const selectAll = $('#select-all-requests');
+    if (selectAll) selectAll.checked = false;
+    updateBulkBar();
+  }
+
+  function resetRequestFilters() {
+    $('#request-search').value = '';
+    $('#request-status').value = '';
+    const sch = $('#request-school');
+    if (sch) sch.value = '';
+    const gen = $('#request-gender');
+    if (gen) gen.value = '';
+    $('#request-from').value = '';
+    $('#request-to').value = '';
+    state.requestPage = 0;
+    state.requestUserId = null;
+    loadRequests();
+  }
+
+  async function exportStudents() {
+    const { data, error } = await state.client.from('profiles')
+      .select('matricule,nom,prenom,first_name,telephone,etablissement,filiere,niveau,role,created_at')
+      .order('created_at', { ascending: false });
+    if (error || !data) {
+      notify(`Impossible d’exporter les comptes : ${error?.message || 'Erreur'}`, 'error');
+      return;
+    }
+    const formatted = data.map(p => ({
+      matricule: p.matricule || '',
+      nom: p.nom || '',
+      prenom: p.prenom || p.first_name || '',
+      telephone: p.telephone || '',
+      etablissement: p.etablissement || '',
+      filiere: p.filiere || '',
+      niveau: p.niveau || '',
+      role: p.role || 'student',
+      created_at: p.created_at || ''
+    }));
+    downloadCsv(formatted, 'etudiants-aedt.csv');
+  }
+
   async function exportRequests() {
     let query = state.client.from('housing_requests').select(
       'dossier_code,nom,prenom,matricule,telephone,email,etablissement,filiere,niveau,logement,status,created_at,updated_at',
@@ -1433,15 +1760,28 @@
 
   async function boot() {
     if (!state.client) {
+      $('#login-view').hidden = false;
+      $('#admin-app').hidden = true;
       $('#login-message').innerHTML = '<p class="error">Configuration Supabase introuvable. Vérifiez config.js.</p>';
       return;
     }
+
     const { data, error } = await state.client.auth.getSession();
     if (error) {
+      $('#login-view').hidden = false;
+      $('#admin-app').hidden = true;
       $('#login-message').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       return;
     }
-    if (data.session) await authorize();
+
+    if (data.session) {
+      await authorize();
+      return;
+    }
+
+    $('#login-view').hidden = false;
+    $('#admin-app').hidden = true;
+    closeSidebar();
   }
 
   async function authorize() {
@@ -1662,8 +2002,57 @@
     window.clearTimeout(state.requestSearchTimer);
     state.requestSearchTimer = window.setTimeout(() => { state.requestPage = 0; loadRequests(); }, 250);
   });
-  ['request-status', 'request-from', 'request-to', 'request-sort'].forEach(id =>
-    $(`#${id}`).addEventListener('change', () => { state.requestPage = 0; loadRequests(); }));
+  ['request-status', 'request-school', 'request-gender', 'request-from', 'request-to', 'request-sort'].forEach(id =>
+    $(`#${id}`)?.addEventListener('change', () => { state.requestPage = 0; loadRequests(); }));
+  $('#request-reset')?.addEventListener('click', resetRequestFilters);
+
+  // Sélection et actions groupées
+  $('#select-all-requests')?.addEventListener('change', event => {
+    const isChecked = event.target.checked;
+    (state.pageRequests || []).forEach(r => {
+      if (isChecked) state.selectedRequests.add(r.id);
+      else state.selectedRequests.delete(r.id);
+    });
+    document.querySelectorAll('.request-select-item').forEach(cb => { cb.checked = isChecked; });
+    updateBulkBar();
+  });
+  document.addEventListener('change', event => {
+    if (event.target.matches('.request-select-item')) {
+      const id = event.target.dataset.id;
+      if (event.target.checked) state.selectedRequests.add(id);
+      else state.selectedRequests.delete(id);
+      const selectAll = $('#select-all-requests');
+      if (selectAll && state.pageRequests) {
+        selectAll.checked = state.pageRequests.length > 0 && state.pageRequests.every(r => state.selectedRequests.has(r.id));
+      }
+      updateBulkBar();
+    }
+  });
+  $('#bulk-apply-status')?.addEventListener('click', applyBulkStatus);
+  $('#bulk-export-selected')?.addEventListener('click', exportBulkSelected);
+  $('#bulk-clear-selection')?.addEventListener('click', clearBulkSelection);
+  $('#students-export')?.addEventListener('click', exportStudents);
+
+  // Filtres rapides documents
+  $('#doc-quick-chips')?.addEventListener('click', event => {
+    const chip = event.target.closest('.doc-chip');
+    if (!chip) return;
+    document.querySelectorAll('.doc-chip').forEach(c => c.classList.remove('is-active'));
+    chip.classList.add('is-active');
+    const val = chip.dataset.docStatus || '';
+    const filterSelect = $('#document-status-filter');
+    if (filterSelect) filterSelect.value = val;
+    state.documentPage = 0;
+    loadDocuments();
+  });
+  $('#document-status-filter')?.addEventListener('change', event => {
+    const val = event.target.value;
+    document.querySelectorAll('.doc-chip').forEach(c => {
+      c.classList.toggle('is-active', (c.dataset.docStatus || '') === val);
+    });
+    state.documentPage = 0;
+    loadDocuments();
+  });
   $('#student-search').addEventListener('input', () => { state.studentPage = 0; loadStudents(); });
   $('#student-sort').addEventListener('change', () => { state.studentPage = 0; loadStudents(); });
   $('#document-search').addEventListener('input', () => { state.documentPage = 0; loadDocuments(); });
