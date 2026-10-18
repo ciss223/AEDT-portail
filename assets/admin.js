@@ -2376,6 +2376,11 @@
           }
           throw new Error(msg);
         }
+      } else {
+        if (!rpcData) {
+          throw new Error('Supabase n’a pas retourné l’identifiant du compte créé.');
+        }
+        await verifyAdminProfile(rpcData, role);
       }
 
       // ── Succès via RPC ──
@@ -2398,6 +2403,9 @@
       if (successBox) successBox.hidden = false;
 
       notify(`Compte ${role === 'super_admin' ? 'Super Administrateur' : 'Administrateur'} créé avec succès !`);
+      $('#student-search').value = '';
+      $('#student-role-filter').value = '';
+      state.studentPage = 0;
       await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
 
     } catch (err) {
@@ -2410,6 +2418,42 @@
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Créer le compte';
+    }
+  }
+
+  async function saveAdminProfile(userId, { firstName, lastName, phone, role }) {
+    const { data: profile, error } = await state.client.from('profiles')
+      .upsert({
+        id: userId,
+        first_name: firstName,
+        prenom: firstName,
+        nom: lastName,
+        telephone: phone || null,
+        role,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+      .select('id,role')
+      .single();
+
+    if (error) {
+      throw new Error(`Le compte existe dans Supabase Auth, mais son profil administrateur n’a pas pu être enregistré : ${error.message}`);
+    }
+    if (!profile || profile.role !== role) {
+      throw new Error('Le compte existe dans Supabase Auth, mais le rôle administrateur n’a pas été confirmé dans son profil.');
+    }
+  }
+
+  async function verifyAdminProfile(userId, role) {
+    const { data: profile, error } = await state.client.from('profiles')
+      .select('id,role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw new Error(`Le compte a été créé, mais son profil administrateur n’a pas pu être vérifié : ${error.message}`);
+    }
+    if (!profile || profile.role !== role) {
+      throw new Error('Le compte a été créé, mais le rôle administrateur attendu est absent de son profil.');
     }
   }
 
@@ -2459,53 +2503,18 @@
       throw new Error('Un compte utilisateur existe déjà avec cette adresse e-mail.');
     }
 
-    // Attendre le déclencheur handle_new_user
-    await new Promise(r => setTimeout(r, 800));
+    await saveAdminProfile(newUserId, { firstName, lastName, phone, role });
 
-    // Mettre à jour le profil via le client administrateur
-    const { error: profileError } = await state.client.from('profiles')
-      .update({
-        first_name: firstName,
-        prenom: firstName,
-        nom: lastName,
-        telephone: phone || null,
-        role: role,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', newUserId);
-
-    if (profileError) {
-      console.warn('Mise à jour du profil :', profileError);
+    // Confirmer l'e-mail pour que le compte soit immédiatement utilisable.
+    const { data: confirmed, error: confirmError } = await state.client.rpc(
+      'admin_confirm_user_email',
+      { p_user_id: newUserId }
+    );
+    if (confirmError || !confirmed) {
+      throw new Error(
+        `Le compte et son profil sont créés, mais la confirmation de l’e-mail a échoué : ${confirmError?.message || 'confirmation non retournée'}`
+      );
     }
-
-    // Confirmer l'email pour que le compte soit immédiatement utilisable
-    try {
-      await state.client.rpc('admin_confirm_user_email', { p_user_id: newUserId });
-    } catch (confirmErr) {
-      console.warn('admin_confirm_user_email :', confirmErr);
-    }
-
-    // Stocker les credentials pour affichage
-    lastCreatedCredentials = {
-      roleLabel: role === 'super_admin' ? 'Super Administrateur 👑' : 'Administrateur',
-      fullName,
-      email,
-      password,
-      loginUrl: window.location.href.split('?')[0].split('#')[0]
-    };
-
-    $('#created-admin-role').textContent = lastCreatedCredentials.roleLabel;
-    $('#created-admin-name').textContent = fullName;
-    $('#created-admin-email').textContent = email;
-    $('#created-admin-pass').textContent = password;
-
-    const form = $('#create-admin-form');
-    if (form) form.hidden = true;
-    const successBox = $('#create-admin-success-box');
-    if (successBox) successBox.hidden = false;
-
-    notify(`Compte ${role === 'super_admin' ? 'Super Administrateur' : 'Administrateur'} créé avec succès !`);
-    await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
   }
 
 

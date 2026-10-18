@@ -10,7 +10,7 @@
   <script src="assets/site.js?v=3" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="assets/admin.js?v=12" defer></script>
+  <script src="assets/admin.js?v=14" defer></script>
 </head>
 <body class="admin-page">
   <section id="login-view" class="admin-login">
@@ -180,7 +180,7 @@
             <div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Étudiants & Rôles</h1><p>Profils enregistrés, gestion des autorisations et création de comptes administratifs.</p></div>
             <div class="heading-actions">
               <button id="students-export" class="admin-secondary" type="button">⬇ Exporter les comptes CSV</button>
-              <button id="btn-open-create-admin" class="admin-primary" type="button" hidden>+ Créer un compte administrateur</button>
+              <button id="btn-open-create-admin" class="admin-primary" type="button">+ Créer un compte administrateur</button>
             </div>
           </div>
           <article class="admin-panel"><div class="table-toolbar"><label class="table-search">⌕<input id="student-search" type="search" placeholder="Nom, établissement, filière…"></label><select id="student-role-filter"><option value="">Tous les comptes</option><option value="student">Étudiants uniquement</option><option value="admin">Administrateurs uniquement</option><option value="super_admin">Super Administrateurs 👑</option></select><select id="student-sort"><option value="newest">Inscriptions récentes</option><option value="name">Nom A–Z</option></select></div><div id="student-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Utilisateur</th><th>Rôle</th><th>Établissement</th><th>Filière</th><th>Niveau</th><th>Inscrit le</th><th>Actions</th></tr></thead><tbody id="student-rows"></tbody></table></div><div id="student-cards" class="mobile-record-list"></div><div class="pagination"><button id="student-prev" class="admin-secondary" type="button">← Précédent</button><span id="student-page">Page 1</span><button id="student-next" class="admin-secondary" type="button">Suivant →</button></div><p class="data-note">Les rôles disponibles sont <strong>Étudiant</strong>, <strong>Administrateur</strong> et <strong>Super Administrateur</strong>. Les créations et modifications de rôle sont journalisées.</p></article>
