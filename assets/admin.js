@@ -2406,7 +2406,13 @@
       $('#student-search').value = '';
       $('#student-role-filter').value = '';
       state.studentPage = 0;
-      await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
+      Promise.allSettled([loadStudents(), loadDashboard(), loadActivity()]).then(results => {
+        const failedRefreshes = results.filter(result => result.status === 'rejected');
+        if (failedRefreshes.length) {
+          console.error('Erreur lors du rafraîchissement après création du compte :', failedRefreshes);
+          notify('Le compte est créé, mais certaines données de la page n’ont pas pu être actualisées. Utilisez « Actualiser » pour réessayer.', 'error');
+        }
+      });
 
     } catch (err) {
       if (errorBox) {
