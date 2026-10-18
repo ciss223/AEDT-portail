@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#092b50">
   <title>Administration — AEDT</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="assets/admin.css?v=13">
+  <link rel="stylesheet" href="assets/admin.css?v=15">
   <script src="assets/site.js?v=3" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="assets/admin.js?v=2" defer></script>
+  <script src="assets/admin.js?v=3" defer></script>
 </head>
 <body class="admin-page">
   <section id="login-view" class="admin-login">
@@ -61,9 +61,13 @@
         <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="admin-sidebar">☰</button>
         <div class="topbar-context"><span>Portail institutionnel</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb">Vue générale</strong></div>
         <div class="topbar-actions">
-          <label class="global-search"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="Rechercher un dossier…" aria-label="Recherche globale"></label>
+          <div class="global-search-wrap">
+            <label class="global-search"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="Recherche rapide (Ctrl+K) : code, nom, section…" aria-label="Recherche globale" autocomplete="off"><kbd class="search-kbd">Ctrl+K</kbd></label>
+            <div id="global-search-dropdown" class="global-search-dropdown" hidden></div>
+          </div>
+          <button id="theme-toggle-btn" class="icon-button" type="button" title="Basculer le thème Clair / Sombre" aria-label="Basculer le thème">🌙</button>
           <button id="activity-shortcut" class="icon-button" type="button" title="Journal des activités" aria-label="Ouvrir le journal des activités">◷</button>
-          <div class="admin-profile"><span id="admin-avatar" class="avatar">A</span><span><strong id="admin-name">Administrateur</strong><small id="admin-role-label">Administration AEDT</small></span><span id="admin-role-badge" class="role-badge admin">Admin</span></div>
+          <button id="open-profile-dialog" class="admin-profile admin-profile-btn" type="button" title="Modifier mon profil administrateur"><span id="admin-avatar" class="avatar">A</span><span><strong id="admin-name">Administrateur</strong><small id="admin-role-label">Administration AEDT</small></span><span id="admin-role-badge" class="role-badge admin">Admin</span></button>
           <button id="logout-button" class="logout-button" type="button">Déconnexion</button>
         </div>
       </header>
@@ -71,7 +75,35 @@
       <main class="admin-main">
         <div id="app-message" class="app-message" role="status" aria-live="polite"></div>
         <section id="view-overview" class="admin-view">
-          <div class="page-heading"><div><span class="admin-kicker">PILOTAGE INSTITUTIONNEL</span><h1>Vue générale</h1><p>Indicateurs calculés à partir des dossiers et comptes enregistrés.</p></div><button id="refresh-button" class="admin-secondary" type="button">↻ Actualiser</button></div>
+          <div class="page-heading">
+            <div><span class="admin-kicker">PILOTAGE INSTITUTIONNEL</span><h1>Vue générale</h1><p>Indicateurs de performance, analytique démographique et suivi en temps réel des dossiers.</p></div>
+            <div class="heading-actions">
+              <button id="print-overview-report" class="admin-secondary" type="button">🖨️ Imprimer le rapport</button>
+              <button id="refresh-button" class="admin-secondary" type="button">↻ Actualiser</button>
+            </div>
+          </div>
+          <div class="kpi-summary-bar" id="kpi-summary-bar">
+            <div class="kpi-pill">
+              <span class="kpi-pill-label">Taux de traitement global</span>
+              <div class="kpi-pill-row"><strong id="kpi-processing-rate">0 %</strong><small id="kpi-processing-detail">0 / 0 traités</small></div>
+              <div class="kpi-mini-bar"><i id="kpi-processing-fill" style="width:0%"></i></div>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-pill-label">Taux d’acceptation (décisions rendues)</span>
+              <div class="kpi-pill-row"><strong id="kpi-approval-rate">0 %</strong><small id="kpi-approval-detail">0 acceptée(s)</small></div>
+              <div class="kpi-mini-bar"><i id="kpi-approval-fill" class="is-green" style="width:0%"></i></div>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-pill-label">Contrôle documentaire</span>
+              <div class="kpi-pill-row"><strong id="kpi-doc-rate">0 %</strong><small id="kpi-doc-detail">Pièces vérifiées</small></div>
+              <div class="kpi-mini-bar"><i id="kpi-doc-fill" class="is-teal" style="width:0%"></i></div>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-pill-label">Réactivité messagerie</span>
+              <div class="kpi-pill-row"><strong id="kpi-msg-rate">100 %</strong><small id="kpi-msg-detail">0 en attente</small></div>
+              <div class="kpi-mini-bar"><i id="kpi-msg-fill" class="is-gold" style="width:100%"></i></div>
+            </div>
+          </div>
           <div class="metric-grid">
             <button class="metric-card" data-go="students"><span class="metric-icon navy">♙</span><span class="metric-label">Étudiants inscrits</span><strong id="metric-students">—</strong><small>Comptes enregistrés</small></button>
             <button class="metric-card" data-go="requests"><span class="metric-icon blue">⌂</span><span class="metric-label">Demandes de logement</span><strong id="metric-requests">—</strong><small>Total des dossiers reçus</small></button>
@@ -87,6 +119,16 @@
             <article class="admin-panel chart-panel"><div class="panel-heading"><div><h2>Flux des demandes</h2><p>Reçues et mises à jour de statut · 6 derniers mois</p></div><span class="panel-chip">Données réelles</span></div><div class="chart-legend"><span><i class="legend-received"></i>Reçues</span><span><i class="legend-processed"></i>Statuts mis à jour</span></div><div id="monthly-chart" class="monthly-chart"></div></article>
             <article class="admin-panel status-panel"><div class="panel-heading"><div><h2>Répartition des dossiers</h2><p>État actuel des demandes reçues</p></div></div><div id="status-chart" class="status-chart"></div></article>
           </div>
+          <div class="dashboard-grid analytics-grid-2">
+            <article class="admin-panel">
+              <div class="panel-heading"><div><h2>Répartition par établissement</h2><p>Établissements d’enseignement supérieur les plus représentés</p></div><span id="school-count-chip" class="panel-chip">—</span></div>
+              <div id="school-breakdown" class="breakdown-list"><p class="empty-state">Analyse en cours…</p></div>
+            </article>
+            <article class="admin-panel">
+              <div class="panel-heading"><div><h2>Démographie & Niveaux d’études</h2><p>Répartition par sexe et par cycle académique</p></div></div>
+              <div id="demographic-breakdown" class="demographic-box"><p class="empty-state">Analyse en cours…</p></div>
+            </article>
+          </div>
           <article class="admin-panel"><div class="panel-heading"><div><h2>Demandes récentes</h2><p>Les dossiers reçus en dernier</p></div><button class="text-action" data-go="requests" type="button">Voir tous les dossiers →</button></div><div id="recent-requests" class="recent-list"></div></article>
           <div class="dashboard-grid">
             <article class="admin-panel"><div class="panel-heading"><div><h2>Messages récents</h2><p>Échanges des étudiants avec l’AEDT</p></div><button class="text-action" data-go="messages" type="button">Ouvrir la messagerie →</button></div><div id="recent-messages" class="recent-list"></div></article>
@@ -96,23 +138,64 @@
         </section>
 
         <section id="view-requests" class="admin-view" hidden>
-          <div class="page-heading"><div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Demandes de logement</h1><p>Examinez les dossiers, vérifiez les justificatifs et mettez à jour les décisions.</p></div><button id="requests-export" class="admin-secondary" type="button">Exporter la liste</button></div>
+          <div class="page-heading">
+            <div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Demandes de logement</h1><p>Examinez les dossiers, affectez les logements, vérifiez les justificatifs et mettez à jour les décisions.</p></div>
+            <div class="heading-actions">
+              <button id="requests-export" class="admin-secondary" type="button">⬇ Exporter CSV</button>
+            </div>
+          </div>
           <article class="admin-panel">
-            <div class="table-toolbar"><label class="table-search">⌕<input id="request-search" type="search" placeholder="Référence, nom, téléphone…"></label><select id="request-status"><option value="">Tous les statuts</option><option>En attente</option><option>En étude</option><option>Acceptée</option><option>Refusée</option></select><label class="date-filter">Du <input id="request-from" type="date"></label><label class="date-filter">Au <input id="request-to" type="date"></label></div>
+            <div class="table-toolbar">
+              <label class="table-search">⌕<input id="request-search" type="search" placeholder="Référence, nom, téléphone, établissement…"></label>
+              <select id="request-status"><option value="">Tous les statuts</option><option>En attente</option><option>En étude</option><option>Acceptée</option><option>Refusée</option></select>
+              <select id="request-school"><option value="">Tous les établissements</option></select>
+              <select id="request-gender"><option value="">Tous les sexes</option><option value="Masculin">Masculin</option><option value="Féminin">Féminin</option></select>
+              <label class="date-filter">Du <input id="request-from" type="date"></label>
+              <label class="date-filter">Au <input id="request-to" type="date"></label>
+              <button id="request-reset" class="admin-secondary" type="button" title="Réinitialiser tous les filtres">Réinitialiser</button>
+            </div>
+            <div id="bulk-actions-bar" class="bulk-actions-bar" hidden>
+              <div class="bulk-info"><strong id="bulk-selected-count">0</strong> dossier(s) sélectionné(s)</div>
+              <div class="bulk-controls">
+                <select id="bulk-status-select">
+                  <option value="">Décision groupée…</option>
+                  <option value="En attente">Passer à : En attente</option>
+                  <option value="En étude">Passer à : En étude</option>
+                  <option value="Acceptée">Passer à : Acceptée</option>
+                  <option value="Refusée">Passer à : Refusée</option>
+                </select>
+                <button id="bulk-apply-status" class="admin-primary" type="button">Appliquer au lot</button>
+                <button id="bulk-export-selected" class="admin-secondary" type="button">⬇ Exporter la sélection</button>
+                <button id="bulk-clear-selection" class="text-action" type="button">Tout désélectionner</button>
+              </div>
+            </div>
             <div class="table-meta"><span id="request-results">Chargement des dossiers…</span><label>Trier par <select id="request-sort"><option value="newest">Plus récents</option><option value="oldest">Plus anciens</option><option value="updated">Mis à jour</option></select></label></div>
-            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Référence</th><th>Étudiant</th><th>Établissement</th><th>Niveau</th><th>Soumis le</th><th>Statut</th><th>Action</th></tr></thead><tbody id="request-rows"></tbody></table></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th class="col-check"><input id="select-all-requests" type="checkbox" aria-label="Sélectionner toute la page"></th><th>Référence</th><th>Étudiant</th><th>Établissement</th><th>Niveau</th><th>Soumis le</th><th>Statut</th><th>Action</th></tr></thead><tbody id="request-rows"></tbody></table></div>
             <div id="request-cards" class="mobile-record-list"></div><div class="pagination"><button id="request-prev" class="admin-secondary" type="button">← Précédent</button><span id="request-page">Page 1</span><button id="request-next" class="admin-secondary" type="button">Suivant →</button></div>
           </article>
         </section>
 
         <section id="view-students" class="admin-view" hidden>
-          <div class="page-heading"><div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Étudiants & Rôles</h1><p>Profils enregistrés, gestion des autorisations et création de comptes administratifs.</p></div><button id="btn-open-create-admin" class="admin-primary" type="button" hidden>+ Créer un compte administrateur</button></div>
+          <div class="page-heading">
+            <div><span class="admin-kicker">GESTION UNIVERSITAIRE</span><h1>Étudiants & Rôles</h1><p>Profils enregistrés, gestion des autorisations et création de comptes administratifs.</p></div>
+            <div class="heading-actions">
+              <button id="students-export" class="admin-secondary" type="button">⬇ Exporter les comptes CSV</button>
+              <button id="btn-open-create-admin" class="admin-primary" type="button" hidden>+ Créer un compte administrateur</button>
+            </div>
+          </div>
           <article class="admin-panel"><div class="table-toolbar"><label class="table-search">⌕<input id="student-search" type="search" placeholder="Nom, établissement, filière…"></label><select id="student-role-filter"><option value="">Tous les comptes</option><option value="student">Étudiants uniquement</option><option value="admin">Administrateurs uniquement</option><option value="super_admin">Super Administrateurs 👑</option></select><select id="student-sort"><option value="newest">Inscriptions récentes</option><option value="name">Nom A–Z</option></select></div><div id="student-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Utilisateur</th><th>Rôle</th><th>Établissement</th><th>Filière</th><th>Niveau</th><th>Inscrit le</th><th>Actions</th></tr></thead><tbody id="student-rows"></tbody></table></div><div id="student-cards" class="mobile-record-list"></div><div class="pagination"><button id="student-prev" class="admin-secondary" type="button">← Précédent</button><span id="student-page">Page 1</span><button id="student-next" class="admin-secondary" type="button">Suivant →</button></div><p class="data-note">Les rôles disponibles sont <strong>Étudiant</strong>, <strong>Administrateur</strong> et <strong>Super Administrateur</strong>. Les créations et modifications de rôle sont journalisées.</p></article>
         </section>
 
         <section id="view-documents" class="admin-view" hidden>
           <div class="page-heading"><div><span class="admin-kicker">GESTION DOCUMENTAIRE</span><h1>Documents justificatifs</h1><p>Fichiers du bucket privé « dossiers », accessibles via un lien signé temporaire. Les changements de vérification sont journalisés.</p></div></div>
-          <article class="admin-panel"><div class="table-toolbar"><label class="table-search">⌕<input id="document-search" type="search" placeholder="Référence, nom de fichier…"></label><select id="document-type"><option value="">Tous les types</option><option value="carte_identite">Carte d’identité</option><option value="docs_demande_logement">Docs de demande de logement</option></select></div><div id="document-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Document</th><th>Type</th><th>Dossier associé</th><th>Transmis le</th><th>Vérification</th><th>Action</th></tr></thead><tbody id="document-rows"></tbody></table></div><div id="document-cards" class="mobile-record-list"></div><div class="pagination"><button id="document-prev" class="admin-secondary" type="button">← Précédent</button><span id="document-page">Page 1</span><button id="document-next" class="admin-secondary" type="button">Suivant →</button></div></article>
+          <article class="admin-panel">
+            <div class="doc-quick-chips" id="doc-quick-chips">
+              <button type="button" class="doc-chip is-active" data-doc-status="">Toutes les pièces</button>
+              <button type="button" class="doc-chip" data-doc-status="En attente">⏳ À vérifier</button>
+              <button type="button" class="doc-chip" data-doc-status="Vérifié">✓ Vérifiées</button>
+              <button type="button" class="doc-chip" data-doc-status="À remplacer">⚠ À remplacer</button>
+            </div>
+            <div class="table-toolbar"><label class="table-search">⌕<input id="document-search" type="search" placeholder="Référence, nom de fichier…"></label><select id="document-type"><option value="">Tous les types</option><option value="carte_identite">Carte d’identité</option><option value="docs_demande_logement">Docs de demande de logement</option></select><select id="document-status-filter"><option value="">Tous les états de vérification</option><option value="En attente">En attente</option><option value="Vérifié">Vérifié</option><option value="À remplacer">À remplacer</option></select></div><div id="document-meta" class="table-meta"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Document</th><th>Type</th><th>Dossier associé</th><th>Transmis le</th><th>Vérification</th><th>Action</th></tr></thead><tbody id="document-rows"></tbody></table></div><div id="document-cards" class="mobile-record-list"></div><div class="pagination"><button id="document-prev" class="admin-secondary" type="button">← Précédent</button><span id="document-page">Page 1</span><button id="document-next" class="admin-secondary" type="button">Suivant →</button></div></article>
         </section>
 
         <section id="view-messages" class="admin-view" hidden>
@@ -243,6 +326,30 @@
   </div>
 
   <dialog id="request-dialog" class="request-dialog"><form method="dialog"><button class="dialog-close" aria-label="Fermer">×</button></form><div id="request-detail"></div></dialog>
+
+  <dialog id="admin-profile-dialog" class="request-dialog student-dialog" aria-labelledby="admin-profile-dialog-title">
+    <form id="admin-profile-form" class="admin-form">
+      <button id="admin-profile-dialog-close" class="dialog-close" type="button" aria-label="Fermer">×</button>
+      <div class="detail-heading">
+        <span class="admin-kicker">COMPTE ADMINISTRATEUR</span>
+        <h2 id="admin-profile-dialog-title">Mon profil & sécurité</h2>
+        <p>Mettez à jour vos coordonnées personnelles ou modifiez votre mot de passe de connexion.</p>
+      </div>
+      <div class="form-row">
+        <label for="my-admin-first-name">Prénom *<input id="my-admin-first-name" required maxlength="160"></label>
+        <label for="my-admin-last-name">Nom *<input id="my-admin-last-name" required maxlength="160"></label>
+      </div>
+      <div class="form-row">
+        <label for="my-admin-email">Adresse e-mail (identifiant)<input id="my-admin-email" type="email" disabled></label>
+        <label for="my-admin-phone">Téléphone<input id="my-admin-phone" type="tel" maxlength="40"></label>
+      </div>
+      <label for="my-admin-new-password">Nouveau mot de passe <span class="optional">laisser vide pour conserver l’actuel</span><input id="my-admin-new-password" type="password" minlength="8" maxlength="120" placeholder="8 caractères minimum"></label>
+      <div class="detail-actions">
+        <button class="admin-secondary" id="admin-profile-cancel" type="button">Annuler</button>
+        <button class="admin-primary" id="admin-profile-save" type="submit">Enregistrer mon profil</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="student-dialog" class="request-dialog student-dialog" aria-labelledby="student-dialog-title">
     <form id="student-edit-form" class="admin-form">
       <button id="student-dialog-close" class="dialog-close" type="button" aria-label="Fermer">×</button>
