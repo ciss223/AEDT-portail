@@ -209,29 +209,121 @@
     $(`#metric-${id}`).textContent = Number.isFinite(Number(value)) ? String(value) : '—';
   }
 
+  async function fetchDashboardDirect() {
+    try {
+      const [
+        studentsRes,
+        requestsRes,
+        docsRes,
+        docsPendingRes,
+        messagesRes,
+        recentReqsRes,
+        recentMsgsRes,
+        activityRes
+      ] = await Promise.allSettled([
+        state.client.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+        state.client.from('housing_requests').select('id,status,created_at'),
+        state.client.from('request_documents').select('id', { count: 'exact', head: true }),
+        state.client.from('request_documents').select('id', { count: 'exact', head: true }).eq('verification_status', 'À vérifier'),
+        state.client.from('messages').select('id', { count: 'exact', head: true }).is('admin_reply', null),
+        state.client.from('housing_requests').select('id,dossier_code,nom,prenom,etablissement,status,created_at').order('created_at', { ascending: false }).limit(5),
+        state.client.from('messages').select('subject,body,admin_reply,created_at').order('created_at', { ascending: false }).limit(5),
+        state.client.from('activity_log').select('action_type,entity_type,entity_id,summary,actor_id,created_at').order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      const requestsData = (requestsRes.status === 'fulfilled' && requestsRes.value?.data) ? requestsRes.value.data : [];
+      const totalRequests = requestsData.length;
+      let pending = 0, review = 0, accepted = 0, refused = 0;
+      requestsData.forEach(r => {
+        if (r.status === 'En attente') pending++;
+        else if (r.status === 'En étude') review++;
+        else if (r.status === 'Acceptée') accepted++;
+        else if (r.status === 'Refusée') refused++;
+      });
+
+      const monthlyMap = {};
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        monthlyMap[key] = { month: key, count: 0, processed: 0 };
+      }
+      requestsData.forEach(r => {
+        if (!r.created_at) return;
+        const key = r.created_at.slice(0, 7);
+        if (monthlyMap[key]) {
+          monthlyMap[key].count++;
+          if (r.status !== 'En attente') {
+            monthlyMap[key].processed++;
+          }
+        }
+      });
+
+      const recentMessages = (recentMsgsRes.status === 'fulfilled' && recentMsgsRes.value?.data)
+        ? recentMsgsRes.value.data.map(m => ({
+            subject: m.subject,
+            body: (m.body || '').slice(0, 140),
+            replied: Boolean(m.admin_reply && m.admin_reply.trim().length > 0),
+            created_at: m.created_at
+          }))
+        : [];
+
+      return {
+        students: studentsRes.status === 'fulfilled' ? (studentsRes.value?.count ?? 0) : 0,
+        requests: totalRequests,
+        pending,
+        review,
+        accepted,
+        refused,
+        documents: docsRes.status === 'fulfilled' ? (docsRes.value?.count ?? 0) : 0,
+        documents_pending: docsPendingRes.status === 'fulfilled' ? (docsPendingRes.value?.count ?? 0) : 0,
+        messages_pending: messagesRes.status === 'fulfilled' ? (messagesRes.value?.count ?? 0) : 0,
+        monthly: Object.values(monthlyMap),
+        recent_requests: (recentReqsRes.status === 'fulfilled' && recentReqsRes.value?.data) || [],
+        recent_messages: recentMessages,
+        recent_activity: (activityRes.status === 'fulfilled' && activityRes.value?.data) || []
+      };
+    } catch (err) {
+      console.warn('Fallback direct dashboard error:', err);
+      return null;
+    }
+  }
+
   async function loadDashboard() {
-    const { data, error } = await state.client.rpc('admin_dashboard_summary');
-    if (error) {
-      notify(`Impossible de charger les indicateurs. Exécutez la mise à jour Supabase indiquée dans SETUP.md. ${error.message}`, 'error');
+    let summary = null;
+    try {
+      const { data, error } = await state.client.rpc('admin_dashboard_summary');
+      if (!error && data) {
+        summary = data;
+      }
+    } catch (e) {
+      // Ignorer l'erreur RPC et basculer sur direct
+    }
+
+    if (!summary) {
+      summary = await fetchDashboardDirect();
+    }
+
+    if (!summary) {
+      notify('Impossible de charger les indicateurs. Vérifiez votre connexion.', 'error');
       return;
     }
-    state.dashboard = data;
-    setMetric('students', data.students);
-    setMetric('requests', data.requests);
-    setMetric('pending', data.pending);
-    setMetric('review', data.review);
-    setMetric('documents', data.documents);
-    setMetric('documents-pending', data.documents_pending);
-    setMetric('accepted', data.accepted);
-    setMetric('refused', data.refused);
-    setMetric('messages', data.messages_pending);
-    $('#nav-request-count').textContent = data.pending;
-    $('#nav-message-count').textContent = data.messages_pending;
-    renderKPIs(data);
-    $('#nav-request-count').textContent = data.pending ?? 0;
-    $('#nav-message-count').textContent = data.messages_pending ?? 0;
-    renderChart(data);
-    renderRecent(data.recent_requests || [], data.recent_messages || [], data.recent_activity || []);
+
+    state.dashboard = summary;
+    setMetric('students', summary.students);
+    setMetric('requests', summary.requests);
+    setMetric('pending', summary.pending);
+    setMetric('review', summary.review);
+    setMetric('documents', summary.documents);
+    setMetric('documents-pending', summary.documents_pending);
+    setMetric('accepted', summary.accepted);
+    setMetric('refused', summary.refused);
+    setMetric('messages', summary.messages_pending);
+    $('#nav-request-count').textContent = summary.pending ?? 0;
+    $('#nav-message-count').textContent = summary.messages_pending ?? 0;
+    renderKPIs(summary);
+    renderChart(summary);
+    renderRecent(summary.recent_requests || [], summary.recent_messages || [], summary.recent_activity || []);
     await loadAnalytics();
   }
 
