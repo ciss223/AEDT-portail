@@ -512,5 +512,96 @@ $$;
 revoke all on function public.admin_confirm_user_email(uuid) from public,anon;
 grant execute on function public.admin_confirm_user_email(uuid) to authenticated;
 
+-- ============================================================
+-- AEDT V15 : Création directe de comptes administrateurs
+-- ============================================================
+-- Crée un compte auth.users + public.profiles en une seule transaction,
+-- avec email confirmé d'emblée (pas de mail de confirmation Supabase).
+-- Nécessite l'extension pgcrypto (activée par défaut sur Supabase).
+create or replace function public.admin_create_user(
+  p_email     text,
+  p_password  text,
+  p_first_name text,
+  p_last_name  text,
+  p_phone      text default null,
+  p_role       text default 'admin'
+)
+returns uuid
+language plpgsql security definer
+set search_path = public, auth, extensions, pg_temp
+as $$
+declare
+  v_uid  uuid;
+  v_now  timestamptz := now();
+begin
+  -- Seuls les administrateurs peuvent appeler cette fonction
+  if not public.is_admin() then
+    raise exception 'Action réservée aux administrateurs.' using errcode = '42501';
+  end if;
+
+  -- Seul un super_admin peut créer un super_admin
+  if p_role = 'super_admin' and not public.is_super_admin() then
+    raise exception 'Seul un Super Administrateur peut créer des comptes Super Administrateurs.' using errcode = '42501';
+  end if;
+
+  -- Vérifier que le rôle est valide
+  if p_role not in ('admin', 'super_admin') then
+    raise exception 'Rôle invalide : %.', p_role using errcode = '22023';
+  end if;
+
+  -- Vérifier si un compte existe déjà avec cet e-mail
+  if exists (select 1 from auth.users where email = lower(trim(p_email))) then
+    raise exception 'Un compte existe déjà avec cette adresse e-mail.' using errcode = '23505';
+  end if;
+
+  v_uid := gen_random_uuid();
+
+  -- Insérer directement dans auth.users avec email_confirmed_at renseigné
+  insert into auth.users (
+    id, instance_id, aud, role,
+    email, encrypted_password,
+    email_confirmed_at, confirmation_sent_at,
+    raw_app_meta_data, raw_user_meta_data,
+    created_at, updated_at,
+    is_sso_user, is_anonymous
+  ) values (
+    v_uid,
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    lower(trim(p_email)),
+    crypt(p_password, gen_salt('bf')),
+    v_now, v_now,
+    jsonb_build_object('provider', 'email', 'providers', array['email']),
+    jsonb_build_object(
+      'first_name',  p_first_name,
+      'prenom',      p_first_name,
+      'nom',         p_last_name,
+      'full_name',   trim(p_first_name || ' ' || p_last_name),
+      'telephone',   p_phone,
+      'role',        p_role
+    ),
+    v_now, v_now,
+    false, false
+  );
+
+  -- Insérer / mettre à jour le profil
+  insert into public.profiles (id, first_name, prenom, nom, telephone, role, updated_at)
+  values (v_uid, p_first_name, p_first_name, p_last_name, p_phone, p_role, v_now)
+  on conflict (id) do update set
+    first_name  = excluded.first_name,
+    prenom      = excluded.prenom,
+    nom         = excluded.nom,
+    telephone   = excluded.telephone,
+    role        = excluded.role,
+    updated_at  = excluded.updated_at;
+
+  return v_uid;
+end;
+$$;
+
+revoke all on function public.admin_create_user(text,text,text,text,text,text) from public, anon;
+grant execute on function public.admin_create_user(text,text,text,text,text,text) to authenticated;
+
 -- Pour définir le premier Super Administrateur du projet :
 -- update public.profiles set role='super_admin' where id='VOTRE_USER_ID';

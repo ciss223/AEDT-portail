@@ -2351,89 +2351,39 @@
     submitBtn.textContent = 'Création en cours…';
 
     try {
-      const config = window.AEDT_CONFIG || {};
-      const url = config.SUPABASE_URL;
-      const key = config.SUPABASE_ANON_KEY;
-      if (!url || !key || !window.supabase) {
-        throw new Error('Configuration Supabase indisponible.');
-      }
-
-      // Client isolé pour ne pas écraser la session administrateur active
-      const tempClient = window.supabase.createClient(url, key, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false
-        }
-      });
-
       const fullName = `${firstName} ${lastName}`.trim();
-      const { data: signUpData, error: signUpError } = await tempClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            prenom: firstName,
-            nom: lastName,
-            full_name: fullName,
-            telephone: phone || null,
-            role: role
-          }
-        }
+
+      // ── Méthode principale : RPC admin_create_user (SECURITY DEFINER) ──
+      // Cette fonction crée le compte directement dans auth.users avec
+      // email_confirmed_at = now() et insère/met à jour public.profiles.
+      // Elle ne nécessite pas de signUp() ni de confirmation d'email.
+      const { data: rpcData, error: rpcError } = await state.client.rpc('admin_create_user', {
+        p_email:      email,
+        p_password:   password,
+        p_first_name: firstName,
+        p_last_name:  lastName,
+        p_phone:      phone || null,
+        p_role:       role
       });
 
-      if (signUpError) {
-        throw new Error(signUpError.message || 'Impossible de créer le compte utilisateur.');
-      }
-
-      const newUserId = signUpData?.user?.id;
-      if (!newUserId) {
-        throw new Error('Identifiant utilisateur manquant après la création du compte.');
-      }
-
-      if (signUpData.user.identities && signUpData.user.identities.length === 0) {
-        throw new Error('Un compte utilisateur existe déjà avec cette adresse e-mail.');
-      }
-
-      // Laisser le temps au déclencheur Supabase handle_new_user d'insérer le profil
-      await new Promise(r => setTimeout(r, 600));
-
-      let { error: profileError } = await state.client.from('profiles')
-        .update({
-          first_name: firstName,
-          prenom: firstName,
-          nom: lastName,
-          telephone: phone || null,
-          role: role,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', newUserId);
-
-      if (profileError) {
-        // En cas d'échec de l'update, tenter upsert
-        const { error: upsertErr } = await state.client.from('profiles').upsert({
-          id: newUserId,
-          first_name: firstName,
-          prenom: firstName,
-          nom: lastName,
-          telephone: phone || null,
-          role: role,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
-        if (upsertErr) {
-          console.warn('Mise à jour du profil :', upsertErr);
+      if (rpcError) {
+        // Si la RPC n'existe pas encore (42883 = undefined_function), on bascule en fallback
+        if (rpcError.code === '42883' || rpcError.message?.includes('Could not find the function')) {
+          console.warn('admin_create_user RPC indisponible, bascule sur signUp() :', rpcError.message);
+          await createAdminAccountFallback({ firstName, lastName, email, phone, password, role, fullName });
+        } else {
+          // Traduire les codes d'erreur PostgreSQL courants
+          let msg = rpcError.message || 'Impossible de créer le compte.';
+          if (rpcError.code === '23505' || msg.includes('existe déjà')) {
+            msg = 'Un compte existe déjà avec cette adresse e-mail.';
+          } else if (rpcError.code === '42501') {
+            msg = msg; // message déjà en français (levé dans la fonction)
+          }
+          throw new Error(msg);
         }
       }
 
-      // Tenter la confirmation d'email automatique
-      try {
-        await state.client.rpc('admin_confirm_user_email', { p_user_id: newUserId });
-      } catch (confirmErr) {
-        console.warn('admin_confirm_user_email :', confirmErr);
-      }
-
-      // Store credentials for copying
+      // ── Succès via RPC ──
       lastCreatedCredentials = {
         roleLabel: role === 'super_admin' ? 'Super Administrateur 👑' : 'Administrateur',
         fullName,
@@ -2465,6 +2415,102 @@
       submitBtn.textContent = 'Créer le compte';
     }
   }
+
+  // Fallback : utilisé uniquement si la RPC admin_create_user n'est pas encore disponible
+  async function createAdminAccountFallback({ firstName, lastName, email, phone, password, role, fullName }) {
+    const config = window.AEDT_CONFIG || {};
+    const url = config.SUPABASE_URL;
+    const key = config.SUPABASE_ANON_KEY;
+    if (!url || !key || !window.supabase) {
+      throw new Error('Configuration Supabase indisponible.');
+    }
+
+    // Client isolé pour ne pas écraser la session administrateur active
+    const tempClient = window.supabase.createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+
+    const { data: signUpData, error: signUpError } = await tempClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          prenom: firstName,
+          nom: lastName,
+          full_name: fullName,
+          telephone: phone || null,
+          role: role
+        }
+      }
+    });
+
+    if (signUpError) {
+      throw new Error(signUpError.message || 'Impossible de créer le compte utilisateur.');
+    }
+
+    const newUserId = signUpData?.user?.id;
+    if (!newUserId) {
+      throw new Error('Identifiant utilisateur manquant après la création du compte.');
+    }
+
+    if (signUpData.user.identities && signUpData.user.identities.length === 0) {
+      throw new Error('Un compte utilisateur existe déjà avec cette adresse e-mail.');
+    }
+
+    // Attendre le déclencheur handle_new_user
+    await new Promise(r => setTimeout(r, 800));
+
+    // Mettre à jour le profil via le client administrateur
+    const { error: profileError } = await state.client.from('profiles')
+      .update({
+        first_name: firstName,
+        prenom: firstName,
+        nom: lastName,
+        telephone: phone || null,
+        role: role,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', newUserId);
+
+    if (profileError) {
+      console.warn('Mise à jour du profil :', profileError);
+    }
+
+    // Confirmer l'email pour que le compte soit immédiatement utilisable
+    try {
+      await state.client.rpc('admin_confirm_user_email', { p_user_id: newUserId });
+    } catch (confirmErr) {
+      console.warn('admin_confirm_user_email :', confirmErr);
+    }
+
+    // Stocker les credentials pour affichage
+    lastCreatedCredentials = {
+      roleLabel: role === 'super_admin' ? 'Super Administrateur 👑' : 'Administrateur',
+      fullName,
+      email,
+      password,
+      loginUrl: window.location.href.split('?')[0].split('#')[0]
+    };
+
+    $('#created-admin-role').textContent = lastCreatedCredentials.roleLabel;
+    $('#created-admin-name').textContent = fullName;
+    $('#created-admin-email').textContent = email;
+    $('#created-admin-pass').textContent = password;
+
+    const form = $('#create-admin-form');
+    if (form) form.hidden = true;
+    const successBox = $('#create-admin-success-box');
+    if (successBox) successBox.hidden = false;
+
+    notify(`Compte ${role === 'super_admin' ? 'Super Administrateur' : 'Administrateur'} créé avec succès !`);
+    await Promise.all([loadStudents(), loadDashboard(), loadActivity()]);
+  }
+
 
   function copyCreatedAdminCredentials() {
     if (!lastCreatedCredentials) return;
