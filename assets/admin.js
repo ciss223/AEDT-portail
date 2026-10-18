@@ -2342,11 +2342,6 @@
       return;
     }
 
-    if (role === 'super_admin') {
-      const confirmSuper = window.confirm(`Confirmez-vous la création d'un compte SUPER ADMINISTRATEUR 👑 pour ${firstName} ${lastName} (${email}) ?`);
-      if (!confirmSuper) return;
-    }
-
     submitBtn.disabled = true;
     submitBtn.textContent = 'Création en cours…';
 
