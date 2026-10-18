@@ -2407,9 +2407,11 @@
 
     } catch (err) {
       if (errorBox) {
-        errorBox.textContent = err.message || 'Une erreur est survenue lors de la création du compte.';
+        const code = err.code ? ` [${err.code}]` : '';
+        errorBox.textContent = (err.message || 'Une erreur est survenue lors de la création du compte.') + code;
         errorBox.hidden = false;
       }
+      console.error('createAdminAccount error:', err);
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Créer le compte';
