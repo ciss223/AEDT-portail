@@ -211,20 +211,26 @@
 .app-message.is-visible{display:block}.app-message.success{border:1px solid #b8e1c3;background:#effaf2;color:#21653a}.app-message.error{border:1px solid #f2c3c2;background:#fff1f0;color:#9b3f3c}
 .empty-state{padding:16px 8px;color:#7f8e9e;font-size:.78rem}
 .data-note{padding:10px 0}
-.request-dialog{width:min(820px,calc(100vw - 28px));max-height:calc(100vh - 30px);overflow:auto;padding:26px;border:0;border-radius:16px;box-shadow:0 24px 90px #092b5044}
-.request-dialog::backdrop{background:#09233f91;backdrop-filter:blur(2px)}
-.dialog-close{float:right;width:34px;height:34px;border:0;border-radius:8px;background:#edf2f6;color:#456;font-size:1.4rem;cursor:pointer}
-.detail-heading{padding:0 42px 15px 0;border-bottom:1px solid #edf1f5}
-.detail-heading h2{margin:0 0 6px;color:#183958;font-size:1.24rem}.detail-heading p{margin:0;color:#78899c;font-size:.76rem}
+.request-dialog{width:min(720px,calc(100vw - 24px));max-height:min(90vh,620px);overflow-y:auto;overflow-x:hidden;padding:22px 24px;border:0;border-radius:16px;box-shadow:0 24px 90px rgba(9,43,80,.4);position:fixed;inset:0;margin:auto}
+.request-dialog::backdrop{background:rgba(9,35,63,.65);backdrop-filter:blur(3px)}
+.dialog-close{position:absolute;top:16px;right:16px;width:34px;height:34px;border:0;border-radius:8px;background:#edf2f6;color:#456;font-size:1.3rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:background .16s ease,color .16s ease}
+.dialog-close:hover{background:#e1e9f1;color:#1a2f44}
+.detail-heading{padding:0 44px 12px 0;border-bottom:1px solid #edf1f5;margin-bottom:12px}
+.detail-heading h2{margin:0 0 4px;color:#183958;font-size:1.18rem}.detail-heading p{margin:0;color:#78899c;font-size:.74rem}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
 .detail-field{padding:11px;border:1px solid #ebeff3;border-radius:9px}
 .detail-field small,.detail-field strong{display:block}.detail-field small{color:#8592a1;font-size:.64rem}.detail-field strong{margin-top:4px;color:#304a64;font-size:.78rem;overflow-wrap:anywhere}
 .detail-section{margin-top:18px}.detail-section h3{color:#294966;font-size:.85rem}
 .detail-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .request-dialog textarea{width:100%;min-height:90px;padding:10px;border:1px solid #dce4ec;border-radius:8px;resize:vertical}
-.student-dialog .admin-form{max-width:none;padding:4px 0}
-.student-dialog .admin-form .detail-heading{margin:0 42px 16px 0}
-.student-dialog .admin-form .detail-actions{justify-content:flex-end;margin-top:20px}
+.request-dialog label{margin:9px 0 3px!important;font-size:.78rem!important;font-weight:700}
+.request-dialog input,.request-dialog select{min-height:38px!important;padding:7px 11px!important;font-size:.84rem!important;border-radius:9px!important}
+.request-dialog .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.student-dialog .admin-form{max-width:none;padding:0}
+.student-dialog .admin-form .detail-actions{justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #edf1f5}
+.request-dialog::-webkit-scrollbar{width:6px}
+.request-dialog::-webkit-scrollbar-thumb{background:#c5d4e2;border-radius:999px}
+.request-dialog::-webkit-scrollbar-track{background:transparent}
 .role-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;font-size:.65rem;font-weight:750}
 .role-badge.admin{background:#092b50;color:#fff}
 .role-badge.student{background:#eef4fb;color:#18538c}

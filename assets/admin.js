@@ -906,7 +906,13 @@
       roleSelect.onchange = updateRoleWarning;
     }
 
+    dialog.scrollTop = 0;
     if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    setTimeout(() => {
+      dialog.scrollTop = 0;
+      $('#student-edit-first-name')?.focus({ preventScroll: true });
+    }, 25);
   }
 
   async function saveStudent(event) {
@@ -1850,6 +1856,75 @@
     });
   }
 
+
+  async function openProfileDialog() {
+    const dialog = $('#admin-profile-dialog');
+    if (!dialog) return;
+    dialog.scrollTop = 0;
+    const form = $('#admin-profile-form');
+    if (form) form.reset();
+
+    const user = state.user;
+    const profile = state.currentUserProfile;
+
+    if ($('#my-admin-email')) $('#my-admin-email').value = user?.email || '';
+    if ($('#my-admin-first-name')) $('#my-admin-first-name').value = profile?.prenom || profile?.first_name || '';
+    if ($('#my-admin-last-name')) $('#my-admin-last-name').value = profile?.nom || '';
+    if ($('#my-admin-phone')) $('#my-admin-phone').value = profile?.telephone || '';
+    if ($('#my-admin-new-password')) $('#my-admin-new-password').value = '';
+
+    if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    setTimeout(() => {
+      dialog.scrollTop = 0;
+      $('#my-admin-first-name')?.focus({ preventScroll: true });
+    }, 25);
+  }
+
+  async function saveAdminProfile(event) {
+    event.preventDefault();
+    const button = $('#admin-profile-save');
+    if (button) button.disabled = true;
+
+    try {
+      const firstName = $('#my-admin-first-name').value.trim();
+      const lastName = $('#my-admin-last-name').value.trim();
+      const phone = $('#my-admin-phone').value.trim();
+      const newPassword = $('#my-admin-new-password').value.trim();
+
+      const { error: profileError } = await state.client.from('profiles').update({
+        prenom: firstName,
+        first_name: firstName,
+        nom: lastName,
+        telephone: phone || null,
+        updated_at: new Date().toISOString()
+      }).eq('id', state.user.id);
+
+      if (profileError) {
+        notify(`Erreur lors de la mise à jour du profil : ${profileError.message}`, 'error');
+        return;
+      }
+
+      if (newPassword) {
+        if (newPassword.length < 8) {
+          notify('Le nouveau mot de passe doit comporter au moins 8 caractères.', 'error');
+          return;
+        }
+        const { error: pwdError } = await state.client.auth.updateUser({ password: newPassword });
+        if (pwdError) {
+          notify(`Profil mis à jour, mais le mot de passe n'a pas pu être changé : ${pwdError.message}`, 'error');
+          return;
+        }
+      }
+
+      notify('Profil administrateur mis à jour avec succès.');
+      $('#admin-profile-dialog').close();
+      await authorize();
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   async function boot() {
     if (!state.client) {
       $('#login-view').hidden = false;
@@ -2417,6 +2492,13 @@
       event.preventDefault();
       $('#global-search')?.focus();
     }
+  });
+    $('#open-profile-dialog')?.addEventListener('click', openProfileDialog);
+  $('#admin-profile-dialog-close')?.addEventListener('click', () => $('#admin-profile-dialog').close());
+  $('#admin-profile-cancel')?.addEventListener('click', () => $('#admin-profile-dialog').close());
+  $('#admin-profile-form')?.addEventListener('submit', saveAdminProfile);
+  $('#admin-profile-dialog')?.addEventListener('click', event => {
+    if (event.target === event.currentTarget) event.currentTarget.close();
   });
   $('#btn-open-create-admin')?.addEventListener('click', openCreateAdminDialog);
   $('#create-admin-dialog-close')?.addEventListener('click', closeCreateAdminDialog);
