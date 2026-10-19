@@ -311,7 +311,7 @@
   .topbar-actions{gap:6px;margin-left:auto;display:flex;align-items:center}
 
   /* Recherche globale mobile ergonomique */
-  .global-search-wrap{flex:none}
+  .global-search-wrap{flex:none;width:38px;min-width:38px}
   .global-search{width:38px;height:38px;min-width:38px;flex:none;padding:0;justify-content:center;border:1px solid var(--admin-line);background:#fff;border-radius:10px;position:relative;cursor:pointer}
   .global-search .search-kbd{display:none!important}
   .global-search span{font-size:1.15rem;color:#405872;pointer-events:none}
