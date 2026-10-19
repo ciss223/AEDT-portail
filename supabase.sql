@@ -605,6 +605,11 @@ begin
 end;
 $$;
 
+-- AEDT V16 : suivi idempotent des courriels d’acceptation de logement.
+alter table public.housing_requests
+  add column if not exists acceptance_email_sent_at timestamptz,
+  add column if not exists acceptance_email_claimed_at timestamptz;
+
 revoke all on function public.admin_create_user(text,text,text,text,text,text) from public, anon;
 grant execute on function public.admin_create_user(text,text,text,text,text,text) to authenticated;
 

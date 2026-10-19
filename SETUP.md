@@ -129,3 +129,23 @@ Exécuter le `supabase.sql` complet dans Supabase après remplacement des fichie
   update public.profiles set role = 'super_admin' where id = 'UUID_DE_VOTRE_COMPTE';
   ```
 
+## V16 — Courriel après acceptation d’une demande de logement
+
+Lorsqu’un administrateur accepte un dossier depuis la liste ou l’action groupée, une fonction Supabase vérifie le rôle de l’appelant, puis envoie le courriel de confirmation via Resend. L’adresse du formulaire est utilisée en priorité; si elle est absente, l’adresse du compte Auth lié au dossier est utilisée. L’envoi est protégé contre les doubles clics et les répétitions.
+
+### Configuration requise (une seule fois)
+
+1. Dans Resend, vérifiez un domaine d’expédition et créez une clé API. Ne communiquez ni ne publiez cette clé.
+2. Dans le SQL Editor Supabase, exécutez la migration suivante (ou réexécutez le fichier `supabase.sql` complet) :
+   ```sql
+   alter table public.housing_requests
+     add column if not exists acceptance_email_sent_at timestamptz,
+     add column if not exists acceptance_email_claimed_at timestamptz;
+   ```
+3. Installez la CLI Supabase, authentifiez-vous (`supabase login`), puis configurez les secrets et déployez la fonction. Remplacez l’adresse par une adresse appartenant à votre domaine vérifié dans Resend :
+   ```powershell
+   supabase secrets set --project-ref VOTRE_PROJECT_REF RESEND_API_KEY=re_votre_cle EMAIL_FROM="AEDT <notifications@votre-domaine.sn>"
+   supabase functions deploy send-housing-acceptance-email --project-ref VOTRE_PROJECT_REF
+   ```
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis automatiquement à la fonction par Supabase. Ne les ajoutez pas au site ni au dépôt.
+4. Après déploiement de la fonction, publiez le site sur GitHub Pages. En cas d’échec d’envoi, l’administration affiche l’erreur et le statut du dossier reste enregistré; l’envoi peut être réessayé après correction de la configuration.

@@ -611,7 +611,26 @@
       : '<p class="empty-state">Aucun dossier ne correspond à ces critères.</p>';
   }
 
+  async function sendHousingAcceptanceEmail(requestId) {
+    try {
+      const { error } = await state.client.functions.invoke('send-housing-acceptance-email', {
+        body: { requestId }
+      });
+      return error;
+    } catch (error) {
+      return error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
   async function updateRequestStatus(id, status) {
+    const { data: currentRequest, error: readError } = await state.client.from('housing_requests')
+      .select('status').eq('id', id).single();
+    if (readError) {
+      notify(`Impossible de vérifier le statut actuel : ${readError.message}`, 'error');
+      await loadRequests();
+      return;
+    }
+
     const { error } = await state.client.from('housing_requests')
       .update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) {
@@ -619,7 +638,17 @@
       await loadRequests();
       return;
     }
-    notify('Statut du dossier mis à jour. Une notification est envoyée si le dossier est lié à un compte étudiant.');
+    let emailError = null;
+    if (status === 'Acceptée' && currentRequest.status !== 'Acceptée') {
+      emailError = await sendHousingAcceptanceEmail(id);
+    }
+    if (emailError) {
+      notify(`Statut enregistré, mais l’e-mail d’acceptation n’a pas pu être envoyé : ${emailError.message}`, 'error');
+    } else {
+      notify(status === 'Acceptée' && currentRequest.status !== 'Acceptée'
+        ? 'Demande acceptée. L’e-mail d’acceptation a été envoyé.'
+        : 'Statut du dossier mis à jour. Une notification est envoyée si le dossier est lié à un compte étudiant.');
+    }
     await Promise.all([loadRequests(), loadDashboard()]);
     if ($('#request-dialog').open) await openRequest(id);
   }
@@ -1719,6 +1748,18 @@
     const button = $('#bulk-apply-status');
     if (button) button.disabled = true;
     try {
+      let previouslyAccepted = new Set();
+      if (newStatus === 'Acceptée') {
+        const { data: existingRequests, error: readError } = await state.client.from('housing_requests')
+          .select('id,status').in('id', ids);
+        if (readError) {
+          notify(`Impossible de vérifier les statuts actuels : ${readError.message}`, 'error');
+          return;
+        }
+        previouslyAccepted = new Set((existingRequests || [])
+          .filter(request => request.status === 'Acceptée')
+          .map(request => request.id));
+      }
       const { error } = await state.client.from('housing_requests')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .in('id', ids);
@@ -1726,7 +1767,27 @@
         notify(`Erreur lors de la modification groupée : ${error.message}`, 'error');
         return;
       }
-      notify(`Statut « ${newStatus} » appliqué avec succès à ${ids.length} dossier(s).`);
+      let emailSummary = '';
+      if (newStatus === 'Acceptée') {
+        const newlyAcceptedIds = ids.filter(id => !previouslyAccepted.has(id));
+        const emailResults = await Promise.all(newlyAcceptedIds.map(async id => ({
+          id,
+          error: await sendHousingAcceptanceEmail(id)
+        })));
+        const failedEmails = emailResults.filter(result => result.error);
+        const sentCount = emailResults.length - failedEmails.length;
+        if (failedEmails.length) {
+          const reasons = failedEmails.map(result => `${result.id}: ${result.error.message}`).join(' ; ');
+          emailSummary = ` ${sentCount} e-mail(s) envoyé(s), ${failedEmails.length} en échec (${reasons}).`;
+        } else if (sentCount) {
+          emailSummary = ` ${sentCount} e-mail(s) d’acceptation envoyé(s).`;
+        }
+      }
+      if (emailSummary.includes('en échec')) {
+        notify(`Statut « ${newStatus} » appliqué à ${ids.length} dossier(s).${emailSummary}`, 'error');
+      } else {
+        notify(`Statut « ${newStatus} » appliqué avec succès à ${ids.length} dossier(s).${emailSummary}`);
+      }
       state.selectedRequests.clear();
       await Promise.all([loadRequests(), loadDashboard()]);
     } finally {
