@@ -562,6 +562,9 @@ begin
     id, instance_id, aud, role,
     email, encrypted_password,
     email_confirmed_at,
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token,
     raw_app_meta_data, raw_user_meta_data,
     created_at, updated_at,
     is_sso_user
@@ -573,6 +576,7 @@ begin
     lower(trim(p_email)),
     v_enc_pass,
     v_now,
+    '', '', '', '', '', '', '', '',
     jsonb_build_object('provider', 'email', 'providers', array['email']),
     jsonb_build_object(
       'first_name', p_first_name,
@@ -606,4 +610,3 @@ grant execute on function public.admin_create_user(text,text,text,text,text,text
 
 -- Pour définir le premier Super Administrateur du projet :
 -- update public.profiles set role='super_admin' where id='VOTRE_USER_ID';
-
