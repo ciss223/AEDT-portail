@@ -294,7 +294,7 @@
 
 @media(max-width:680px){
   body.admin-page{overflow-x:hidden}
-  .logout-button{width:38px;height:38px;min-height:38px;min-width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;font-size:0;border-radius:9px;background:#fff1f0;border-color:#f8d1ce;color:#ab3630}
+  .admin-page .logout-button{width:38px;height:38px;min-height:38px;min-width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;font-size:0;border-radius:9px;background:#fff1f0;border-color:#f8d1ce;color:#ab3630}
   .logout-button::after{content:"⏻";font-size:1.15rem;font-weight:700}
 
   /* Écran de connexion sur téléphone */
@@ -322,7 +322,7 @@
   .admin-profile{min-width:0;gap:0}
   .admin-profile>span:not(.avatar){display:none}
   .avatar{width:36px;height:36px;font-size:.8rem}
-  .logout-button{width:38px;height:38px;min-height:38px;min-width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;font-size:0;border-radius:10px;background:#fff1f0;border-color:#f8d1ce;color:#ab3630}
+  .admin-page .logout-button{width:38px;height:38px;min-height:38px;min-width:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;font-size:0;border-radius:10px;background:#fff1f0;border-color:#f8d1ce;color:#ab3630}
   .logout-button::after{content:"⏻";font-size:1.15rem;font-weight:700}
   .sidebar-toggle{width:38px;height:38px;min-width:38px;font-size:1.2rem;border-radius:10px}
 
