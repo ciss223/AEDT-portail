@@ -43,7 +43,7 @@
 .admin-brand strong{display:block;font-size:1.05rem;line-height:1.1;letter-spacing:-.02em;font-weight:800}
 .admin-brand small{display:block;color:#bad4ee;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
 .sidebar-label{padding:10px 10px 3px!important;color:#9bb7d4;font-size:.62rem;letter-spacing:.12em;font-weight:850;text-transform:uppercase}
-.admin-nav{display:flex!important;flex-direction:column!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;flex:1 1 0!important;min-height:0!important;padding:0 8px 10px!important;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.32) rgba(0,0,0,.15)}
+.admin-nav{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;flex:1 1 0!important;min-height:0!important;padding:0 8px 10px!important;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.32) rgba(0,0,0,.15)}
 .admin-nav::-webkit-scrollbar{width:6px}
 .admin-nav::-webkit-scrollbar-track{background:rgba(0,0,0,.12);border-radius:999px}
 .admin-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);border-radius:999px}
